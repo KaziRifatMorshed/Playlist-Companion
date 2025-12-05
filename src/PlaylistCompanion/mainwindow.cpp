@@ -12,3 +12,10 @@ MainWindow::~MainWindow()
 {
     delete ui;
 }
+
+void MainWindow::on_pushButton_3_clicked()
+{
+    settingsWidgt = new Settings();
+    settingsWidgt->show();
+}
+

@@ -1,4 +1,4 @@
--- Enable foreign key support (must be done every time the connection opens)
+-- Enable foreign key constraints (required for SQLite)
 PRAGMA foreign_keys = ON;
 
 -- 1. Table: General
@@ -10,7 +10,10 @@ CREATE TABLE General (
 -- 2. Table: MediaPlayerPath
 CREATE TABLE MediaPlayerPath (
     mediaPlayerName TEXT,
-    mediaPlayerPath TEXT
+    mediaPlayerPath TEXT,
+    -- Converted "string defaultMediaPlayer" to a boolean flag (0 or 1)
+    -- Set this to 1 for the player you want to be the default.
+    isDefault INTEGER DEFAULT 0 CHECK(isDefault IN (0, 1))
 );
 
 -- 3. Table: Playlist
@@ -32,7 +35,7 @@ CREATE TABLE Video (
     videoID INTEGER PRIMARY KEY AUTOINCREMENT,
     playlistID INTEGER,
     videoPath TEXT NOT NULL,
-    isWatched INTEGER DEFAULT 0 CHECK(isWatched IN (0, 1)), -- 0 = False, 1 = True
+    isWatched INTEGER DEFAULT 0 CHECK(isWatched IN (0, 1)), -- 0=False, 1=True
     FOREIGN KEY (playlistID) REFERENCES Playlist(playlistId) ON DELETE CASCADE
 );
 
@@ -41,7 +44,7 @@ CREATE TABLE Notes (
     noteID INTEGER PRIMARY KEY AUTOINCREMENT,
     playlistId INTEGER,
     videoID INTEGER NOT NULL DEFAULT -1,
-    vdoStartTime TEXT, -- Stored as HH:MM:SS string
-    vdoEndTime TEXT,   -- Stored as HH:MM:SS string
+    vdoStartTime TEXT, -- Store as 'HH:MM:SS'
+    vdoEndTime TEXT,   -- Store as 'HH:MM:SS'
     FOREIGN KEY (playlistId) REFERENCES Playlist(playlistId) ON DELETE CASCADE
 );

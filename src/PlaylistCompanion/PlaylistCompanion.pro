@@ -11,14 +11,17 @@ CONFIG += c++17
 SOURCES += \
     db_sqlite.cpp \
     main.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    settings.cpp
 
 HEADERS += \
     include/db_sqlite.h \
-    mainwindow.h
+    mainwindow.h \
+    settings.h
 
 FORMS += \
-    mainwindow.ui
+    mainwindow.ui \
+    settings.ui
 
 TRANSLATIONS += \
     PlaylistCompanion_bn_BD.ts
