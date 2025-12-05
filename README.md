@@ -4,9 +4,9 @@
 
 <div align="center">
 
-# Playlist-Companion
+# PlaylistCompanion
 
-**A desktop app to track your progress through local video playlists and tutorials.**
+**A desktop app to track your progress through local video playlists and tutorials**
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/noobcod3r-rtx/Playlist-Companion)
 [![License](https://img.shields.io/badge/license-MIT-blue)](https://github.com/noobcod3r-rtx/Playlist-Companion/blob/main/LICENSE)
