@@ -13,7 +13,7 @@
 #include <utility>
 #include <vector>
 
-// --- Global Data (The array of media player name and default path) ---
+// --- Global Data ---
 
 std::vector<std::pair<QString, QString>> mediaPlayerEntries = {
     // NOTE: Windows paths must use double backslashes (\\) or forward slashes
@@ -210,18 +210,25 @@ Settings::Settings(QWidget *parent) : QWidget(parent), ui(new Ui::Settings) {
 Settings::~Settings() { delete ui; }
 
 void Settings::on_restoreBackup_clicked() {
-  QString filter = "SQLite (*.sqlite)";
 
+  // get which file to restore
+  QString filter = "SQLite (*.sqlite)";
   QString backupFileName = QFileDialog::getOpenFileName(
       this, "Select a SQLite file that stored previous backup",
       Settings::dbInstance->dbDirPath, filter);
+  // check whether the file exists
   QFile instructionFile(backupFileName);
   if (!instructionFile.open(QFile::ReadOnly)) {
     QMessageBox::warning(this, "File failed to select !!!",
                          "File failed to select!");
   }
+  // perform backup & replacement
+  dbInstance->restoreDBfile(backupFileName);
 
-  // now restore backup and update DB file
+  // NOTE: upadate UI with new data ; it can be a better approach to close the
+  // app and reopen it again
+
+  QMessageBox::information(this, "Backup Restoration", "For safety measurements, we have made a backup of the current database. Now, the data will be replaced with the data from the backup/sqlite file you have just selected.\n\nIf you want to get back your data, you can restore it again. SQLite backup filename contains timestamp reffering when backup was performed.");
 }
 
 void Settings::on_createBackup_clicked() {
@@ -231,6 +238,8 @@ void Settings::on_createBackup_clicked() {
     QMessageBox::warning(this, "Failed !!!",
                          "Failed to create backup! Please make sure .... ");
   } else {
-      QMessageBox::information(this, "Success", "Succcessfully backup created at location: \n" + newlyCreatedBackup);
+    QMessageBox::information(this, "Success",
+                             "Succcessfully backup created at location: \n\n" +
+                                 newlyCreatedBackup);
   }
 }

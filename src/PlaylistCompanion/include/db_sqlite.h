@@ -4,7 +4,10 @@
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QDebug>
+#include <QFile>
 #include <QFileInfo>
+#include <QMutex>
+#include <QMutexLocker>
 #include <QProcess>
 #include <QString>
 #include <QVariant>
@@ -100,15 +103,14 @@ public:
         dbDirPath + "backup_" +
         QDateTime::currentDateTime().toString("yyyy-MM-dd_HH-mm-ss") +
         ".sqlite";
-    QString cpPath;
-#ifdef __linux__
-    cpPath = "/usr/bin/cp";
-#elif _WIN32
-    cpPath = "?????";
-#endif
-    QProcess::execute(cpPath, {dbPath, newlyCreatedBackup});
+    copyFile(dbPath, newlyCreatedBackup);
     dbdebug << "db backup created at :" << newlyCreatedBackup;
     return newlyCreatedBackup;
+  }
+
+  void restoreDBfile(QString targetFilePath) {
+    backupDBfile();
+    copyFile(targetFilePath, dbInstance->dbPath);
   }
 
 private:
@@ -116,6 +118,68 @@ private:
   ~SQliteDB() { closeDB(); }
 
   QSqlDatabase db;
+
+  bool copyFile(QString src, QString dest) {
+    // 1. Check if source exists
+    if (!QFile::exists(src)) {
+      dbdebug << "Error: Source file does not exist.";
+      return false;
+    }
+
+    // 2. Handle Overwrite: Remove destination if it exists
+    if (QFile::exists(dest)) {
+      if (!QFile::remove(dest)) {
+        dbdebug << "Error: Could not remove existing destination file.";
+        return false;
+      }
+    }
+
+    // 3. Perform the copy
+    bool success = QFile::copy(src, dest);
+
+    if (!success) {
+      dbdebug << "Error: Copy failed.";
+    }
+    return success;
+  }
+
+  /*
+  void execCP(QString src, QString dest) {
+    // 1. Declare a static mutex.
+    // 'static' ensures this single mutex instance is shared by ALL threads.
+    // If it weren't static, every thread would create its own mutex, rendering
+    // it useless.
+    static QMutex mutex;
+
+    // 2. Use QMutexLocker for RAII-style locking.
+    // The mutex is locked when 'locker' is created.
+    // The mutex is automatically unlocked when 'locker' goes out of scope (end
+    // of function).
+    QMutexLocker locker(&mutex);
+
+    QString cpPath;
+    QStringList arguments;
+
+#ifdef __linux__
+    cpPath = "/usr/bin/cp";
+    arguments = {src, dest};
+#elif _WIN32
+    // Windows does not have a standalone 'cp' executable.
+    // We must invoke 'cmd.exe' and tell it to run the 'copy' command.
+    cpPath = "cmd.exe";
+    // /c tells cmd to run the command and terminate.
+    // /y tells copy to suppress confirmation prompts (overwrite without
+    // asking).
+    arguments = {"/c", "copy", "/y", src, dest};
+#endif
+
+    // This thread now has exclusive access. Other threads hitting this function
+    // will wait here until the copy finishes.
+    QProcess::execute(cpPath, arguments);
+  }
+*/
+
+  // END OF CLASS
 };
 
 #endif // DB_SQLITE_H
