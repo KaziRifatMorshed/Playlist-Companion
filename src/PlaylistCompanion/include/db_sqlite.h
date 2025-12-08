@@ -16,6 +16,8 @@ class SQliteDB {
 
 public:
   static SQliteDB *dbInstance;
+  static QString appPath;
+  static QString appDirPath;
   static QString dbPath;
   static QString dbDirPath;
 
@@ -24,18 +26,29 @@ public:
     if (!dbInstance) {
       qDebug() << "[sqLiteDB] db engine started";
       dbInstance = new SQliteDB();
-      dbPath = QCoreApplication::applicationFilePath();
-      dbDirPath = QCoreApplication::applicationDirPath();
+
+      // generate paths
+      appPath = QCoreApplication::applicationFilePath();
+      appDirPath = QCoreApplication::applicationDirPath();
+      dbDirPath = appDirPath +
+#ifdef __linux__
+                  "/dbPlaylistCompanion/";
+#elif _WIN32
+                  "\\dbPlaylistCompanion\\";
+#endif
+      dbPath = dbDirPath + "db_PL.sqlite";
     }
     return dbInstance;
   }
+
 
   // Delete copy and assignment
   SQliteDB(const SQliteDB &) = delete;
   SQliteDB &operator=(const SQliteDB &) = delete;
 
+
   // Open the database
-  bool openDB(const QString &dbPath = "./db/db.sqlite") {
+  bool openDB(const QString &dbPath = SQliteDB::dbPath) {
     if (db.isOpen())
       return true;
 

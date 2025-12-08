@@ -4,16 +4,15 @@ PRAGMA foreign_keys = ON;
 -- 1. Table: General
 CREATE TABLE General (
     OS TEXT CHECK(OS IN ('Windows', 'Linux', 'Mac')),
-    lastUpdated TEXT DEFAULT CURRENT_TIMESTAMP
+    lastUpdated TEXT DEFAULT CURRENT_TIMESTAMP,
+    defaultMediaPlayer TEXT DEFAULT '',
+    hasOpenedBefore INTEGER DEFAULT 0 CHECK(hasOpenedBefore IN (0, 1)) -- 0=notOpened, 1=Opened
 );
 
 -- 2. Table: MediaPlayerPath
 CREATE TABLE MediaPlayerPath (
     mediaPlayerName TEXT,
-    mediaPlayerPath TEXT,
-    -- Converted "string defaultMediaPlayer" to a boolean flag (0 or 1)
-    -- Set this to 1 for the player you want to be the default.
-    isDefault INTEGER DEFAULT 0 CHECK(isDefault IN (0, 1))
+    mediaPlayerPath TEXT
 );
 
 -- 3. Table: Playlist

@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <settings.h>
+#include <include/db_sqlite.h>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
