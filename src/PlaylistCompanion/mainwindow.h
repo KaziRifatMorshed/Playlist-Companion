@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <settings.h>
+#include <addnewplaylistwindow.h>
 #include <include/db_sqlite.h>
 
 QT_BEGIN_NAMESPACE
@@ -22,8 +23,14 @@ public:
 private slots:
     void on_pushButton_3_clicked();
 
+    void on_editPlaylistButton_clicked();
+
+    void on_createNewPlaylist_clicked();
+
 private:
     Ui::MainWindow *ui;
+    SQliteDB *dbInstance;
     Settings *settingsWidgt;
+    AddNewPlaylistWindow *playlistWindow;
 };
 #endif // MAINWINDOW_H
