@@ -18,6 +18,8 @@ public:
 private slots:
   void on_restoreBackup_clicked();
 
+    void on_createBackup_clicked();
+
 private:
   Ui::Settings *ui;
   SQliteDB *dbInstance;

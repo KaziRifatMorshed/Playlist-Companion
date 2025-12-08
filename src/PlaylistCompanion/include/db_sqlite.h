@@ -12,6 +12,8 @@
 #include <QtSql/QSqlError>
 #include <QtSql/QSqlQuery>
 
+#define dbdebug qDebug() << "[sqLiteDB] "
+
 class SQliteDB {
 
 public:
@@ -24,7 +26,7 @@ public:
   // Get the singleton instance
   static SQliteDB *instance() {
     if (!dbInstance) {
-      qDebug() << "[sqLiteDB] db engine started";
+      dbdebug << "db engine started";
       dbInstance = new SQliteDB();
 
       // generate paths
@@ -41,18 +43,16 @@ public:
     return dbInstance;
   }
 
-
   // Delete copy and assignment
   SQliteDB(const SQliteDB &) = delete;
   SQliteDB &operator=(const SQliteDB &) = delete;
-
 
   // Open the database
   bool openDB(const QString &dbPath = SQliteDB::dbPath) {
     if (db.isOpen())
       return true;
 
-    qDebug() << "[sqLiteDB] opening db...";
+    dbdebug << "opening db...";
 
     // QList listOfDrivers = QSqlDatabase::drivers();
     // qDebug() << listOfDrivers;
@@ -95,17 +95,21 @@ public:
   // Get raw QSqlDatabase for advanced operations
   QSqlDatabase &database() { return db; }
 
-  void backupDBfile() {
+  QString backupDBfile() {
+    QString newlyCreatedBackup =
+        dbDirPath + "backup_" +
+        QDateTime::currentDateTime().toString("yyyy-MM-dd_HH-mm-ss") +
+        ".sqlite";
+    QString cpPath;
 #ifdef __linux__
-    QProcess::execute("/usr/bin/cp",
-                      {dbPath, dbDirPath + "backup_" +
-                                   QDateTime::currentDateTime().toString(
-                                       "yyyy-MM-dd_HH-mm-ss") +
-                                   ".sqlite"});
+    cpPath = "/usr/bin/cp";
 #elif _WIN32
-
+    cpPath = "?????";
 #endif
-  } // not tested
+    QProcess::execute(cpPath, {dbPath, newlyCreatedBackup});
+    dbdebug << "db backup created at :" << newlyCreatedBackup;
+    return newlyCreatedBackup;
+  }
 
 private:
   SQliteDB() { openDB(); }

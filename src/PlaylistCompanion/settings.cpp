@@ -223,3 +223,14 @@ void Settings::on_restoreBackup_clicked() {
 
   // now restore backup and update DB file
 }
+
+void Settings::on_createBackup_clicked() {
+  QString newlyCreatedBackup = dbInstance->backupDBfile();
+  QFile newlyCreatedBackupFile(newlyCreatedBackup);
+  if (!newlyCreatedBackupFile.open(QFile::ReadOnly)) {
+    QMessageBox::warning(this, "Failed !!!",
+                         "Failed to create backup! Please make sure .... ");
+  } else {
+      QMessageBox::information(this, "Success", "Succcessfully backup created at location: \n" + newlyCreatedBackup);
+  }
+}
