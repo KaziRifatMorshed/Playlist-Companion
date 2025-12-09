@@ -92,5 +92,7 @@ void MainWindow::initGeneralSettings() {
     qDebug()
         << "[MainWindow] General info was empty. Initialized defaults for OS:"
         << currentOS;
+    MainWindow::on_pushButton_3_clicked();
   }
+
 }
