@@ -187,11 +187,16 @@ void updateDfltCombo(Ui::Settings *ui) {
   // 2. Populate the combo box with media player names
   for (const auto &entry : mediaPlayerEntries) {
     const QString &name = entry.first;
+    const QString &path = entry.second;
+
+    // Check if the file exists on the current system
+    bool fileExists = QFile::exists(path);
 
     // Add the name to the combo box.
     // NOTE: We use the *name* as the display text, and optionally,
     // we could store the *path* (entry.second) as the user data.
-    comboBox->addItem(name);
+    if (fileExists)
+      comboBox->addItem(name);
   }
 
   // 3. Select the first item by default
@@ -199,6 +204,53 @@ void updateDfltCombo(Ui::Settings *ui) {
   if (!mediaPlayerEntries.empty()) {
     comboBox->setCurrentIndex(0);
   }
+}
+
+// This function is automatically called when the user changes the selection
+// private slots:
+void Settings::on_dfltMediaPlayerComboBox_currentTextChanged(
+    const QString &arg1) {
+  // 1. Basic validation
+  if (arg1.isEmpty()) {
+    return;
+  }
+
+  // 2. Prepare the Name for the SELECT query
+  // We must escape quotes HERE first to safely find the path
+  QString safeLookupName = arg1;
+  safeLookupName.replace("'", "''");
+
+  // 3. Fetch the Path from DB
+  // Notice the added single quotes around '%1'
+  QString selectQ = QString("SELECT mediaPlayerPath FROM MediaPlayerPath WHERE "
+                            "mediaPlayerName = '%1'")
+                        .arg(safeLookupName);
+
+  QSqlQuery temp = dbInstance->execQuery(selectQ);
+
+  QString pathFound = "";
+
+  // CRITICAL FIX: You must call next() to get the record
+  if (temp.next()) {
+    pathFound = temp.value("mediaPlayerPath").toString();
+  } else {
+    qWarning() << "[Settings] Could not find path for player:" << arg1;
+    return; // Stop if no path found
+  }
+
+  // 4. Escape the Path for the UPDATE query
+  // The path (e.g., C:\Program Files\...) might contain special chars
+  QString safePath = pathFound;
+  safePath.replace("'", "''");
+
+  // 5. Update the General table
+  QString updateQ =
+      QString("UPDATE General SET defaultMediaPlayer = '%1' WHERE id = 1")
+          .arg(safePath);
+
+  dbInstance->execQuery(updateQ);
+
+  qDebug() << "[Settings] Default media player set to path:" << pathFound;
 }
 
 /*

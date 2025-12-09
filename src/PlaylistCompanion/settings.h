@@ -18,6 +18,7 @@ public:
 private slots:
   void on_restoreBackup_clicked();
   void on_createBackup_clicked();
+  void on_dfltMediaPlayerComboBox_currentTextChanged(const QString &arg1);
 
 private:
   Ui::Settings *ui;
