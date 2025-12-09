@@ -13,8 +13,13 @@ MainWindow::MainWindow(QWidget *parent)
 MainWindow::~MainWindow() { delete ui; }
 
 void MainWindow::on_pushButton_3_clicked() {
-  settingsWidgt = new Settings();
-  settingsWidgt->show();
+    settingsWidgt = new Settings();
+    // 2. Set Modality: This disables the MainWindow while Settings is open
+    settingsWidgt->setWindowModality(Qt::ApplicationModal);
+    // 3. (Optional) Make sure it deletes itself from memory when closed
+    // preventing memory leaks since you use 'new' every time.
+    settingsWidgt->setAttribute(Qt::WA_DeleteOnClose);
+    settingsWidgt->show();
 }
 
 void MainWindow::on_editPlaylistButton_clicked() {
