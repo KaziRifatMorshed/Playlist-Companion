@@ -17,12 +17,12 @@ public:
 
 private slots:
   void on_restoreBackup_clicked();
-
-    void on_createBackup_clicked();
+  void on_createBackup_clicked();
 
 private:
   Ui::Settings *ui;
   SQliteDB *dbInstance;
+  void updatePlayerList(Ui::Settings *ui);
 };
 
 #endif // SETTINGS_H

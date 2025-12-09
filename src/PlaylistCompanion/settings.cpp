@@ -99,15 +99,18 @@ std::vector<std::pair<QString, QString>> mediaPlayerEntries = {
 #endif
     }};
 
-void updatePlayerList(Ui::Settings *ui) {
+void Settings::updatePlayerList(Ui::Settings *ui) {
   // 1. Setup the table
   ui->listPlayersTableWidget->setRowCount(mediaPlayerEntries.size());
   ui->listPlayersTableWidget->setColumnCount(2);
 
   // Set headers (Added from previous fix, necessary for a good table)
   QStringList labels;
-  labels << "Player Name" << "Default Path";
+  labels << "Video Player Name" << "Default Path";
   ui->listPlayersTableWidget->setHorizontalHeaderLabels(labels);
+
+  // clear all media player paths from DB to add new entries
+  Settings::dbInstance->execQuery("DELETE FROM MediaPlayerPath");
 
   int row = 0;
 
@@ -120,6 +123,27 @@ void updatePlayerList(Ui::Settings *ui) {
     bool fileExists = QFile::exists(path);
 
     // --- Core Logic for Item Flags and Appearance ---
+
+    // --- DB INSERTION LOGIC ---
+    if (fileExists) {
+      // Manually escape single quotes (' -> '') to prevent SQL injection/errors
+      QString safeName = name;
+      safeName.replace("'", "''");
+
+      QString safePath = path;
+      safePath.replace("'", "''");
+
+      // Construct the raw query string
+      // We use INSERT OR REPLACE to update the path if the player name already
+      // exists
+      QString q = QString("INSERT OR REPLACE INTO MediaPlayerPath "
+                          "(mediaPlayerName, mediaPlayerPath) "
+                          "VALUES ('%1', '%2')")
+                      .arg(safeName, safePath);
+
+      // Execute using the requested helper function from SQliteDB
+      SQliteDB::instance()->execQuery(q);
+    }
 
     // Create QTableWidgetItem for the name and path
     QTableWidgetItem *nameItem = new QTableWidgetItem(name);
@@ -228,7 +252,13 @@ void Settings::on_restoreBackup_clicked() {
   // NOTE: upadate UI with new data ; it can be a better approach to close the
   // app and reopen it again
 
-  QMessageBox::information(this, "Backup Restoration", "For safety measurements, we have made a backup of the current database. Now, the data will be replaced with the data from the backup/sqlite file you have just selected.\n\nIf you want to get back your data, you can restore it again. SQLite backup filename contains timestamp reffering when backup was performed.");
+  QMessageBox::information(
+      this, "Backup Restoration",
+      "For safety measurements, we have made a backup of the current database. "
+      "Now, the data will be replaced with the data from the backup/sqlite "
+      "file you have just selected.\n\nIf you want to get back your data, you "
+      "can restore it again. SQLite backup filename contains timestamp "
+      "reffering when backup was performed.");
 }
 
 void Settings::on_createBackup_clicked() {
