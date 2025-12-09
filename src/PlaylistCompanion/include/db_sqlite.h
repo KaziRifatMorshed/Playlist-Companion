@@ -63,6 +63,7 @@ private:
   static QString dbDirPath;
 
   bool copyFile(QString src, QString dest);
+  QMutex queryMutex;
 };
 
 #endif // DB_SQLITE_H

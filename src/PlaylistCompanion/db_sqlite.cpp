@@ -62,6 +62,7 @@ bool SQliteDB::openDB(const QString &dbPath) {
 
 // Execute a query and return QSqlQuery object
 QSqlQuery SQliteDB::execQuery(const QString &queryStr) {
+    QMutexLocker locker(&queryMutex);
     QSqlQuery query(db);
     if (!query.exec(queryStr)) {
         qCritical() << "[sqLiteDB] Query failed:" << queryStr
