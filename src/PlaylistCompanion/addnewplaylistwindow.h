@@ -8,12 +8,18 @@ namespace Ui {
 class AddNewPlaylistWindow;
 }
 
+struct VideoCollection {
+    QVector<QString> fileList; // Contains full absolute path + filename
+    int count;
+};
+
+
 class AddNewPlaylistWindow : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit AddNewPlaylistWindow(QWidget *parent = nullptr, int playlistID = -1, QString plpath = "");
+    explicit AddNewPlaylistWindow(QWidget *parent = nullptr, int plListId = -1, QString plpath = "");
     ~AddNewPlaylistWindow();
 
 private slots:
@@ -22,6 +28,11 @@ private slots:
 private:
     Ui::AddNewPlaylistWindow *ui;
     SQliteDB *dbInstance;
+    VideoCollection vdos;
+    int playlistID;
+
+    VideoCollection getAllVideosFromDir(QString rootPath);
+    VideoCollection getAllVideosFromDB();
 };
 
 #endif // ADDNEWPLAYLISTWINDOW_H

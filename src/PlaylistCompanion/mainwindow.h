@@ -5,6 +5,7 @@
 #include <settings.h>
 #include <addnewplaylistwindow.h>
 #include <include/db_sqlite.h>
+#include <QVector>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -32,5 +33,6 @@ private:
     SQliteDB *dbInstance;
     Settings *settingsWidgt;
     AddNewPlaylistWindow *playlistWindow;
+    QVector<QString> listOfPlaylists;
 };
 #endif // MAINWINDOW_H
