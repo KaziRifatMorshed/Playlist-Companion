@@ -97,7 +97,9 @@ std::vector<std::pair<QString, QString>> mediaPlayerEntries = {
 #elif _WIN32
         "" // Not applicable on Windows
 #endif
-    }};
+    }
+    //
+};
 
 void Settings::updatePlayerList(Ui::Settings *ui) {
   // 1. Setup the table
