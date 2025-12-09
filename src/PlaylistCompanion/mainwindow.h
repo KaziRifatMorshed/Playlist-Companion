@@ -34,5 +34,7 @@ private:
     Settings *settingsWidgt;
     AddNewPlaylistWindow *playlistWindow;
     QVector<QString> listOfPlaylists;
+    int currentPlListId = -1;
+    int currentVdoId = -1;
 };
 #endif // MAINWINDOW_H

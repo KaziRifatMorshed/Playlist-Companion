@@ -8,7 +8,7 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    dbInstance = SQliteDB::instance();
+    MainWindow::dbInstance = SQliteDB::instance();
 }
 
 MainWindow::~MainWindow()
