@@ -29,12 +29,20 @@ private slots:
     void on_createNewPlaylist_clicked();
 
 private:
+private:
     Ui::MainWindow *ui;
     SQliteDB *dbInstance;
     Settings *settingsWidgt;
     AddNewPlaylistWindow *playlistWindow;
     QVector<QString> listOfPlaylists;
-    int currentPlListId = -1;
-    int currentVdoId = -1;
+
+    // --- New Variables for General Settings ---
+    QString defaultMediaPlayer;
+    int lastWatchedPlId = -1; // -1 or 0 indicates no playlist selected
+    int lastWatchedVdoId = -1;
+    QString currentOS;
+
+    // --- Helper Function ---
+    void initGeneralSettings();
 };
 #endif // MAINWINDOW_H
