@@ -215,7 +215,7 @@ void Settings::on_restoreBackup_clicked() {
   QString filter = "SQLite (*.sqlite)";
   QString backupFileName = QFileDialog::getOpenFileName(
       this, "Select a SQLite file that stored previous backup",
-      Settings::dbInstance->dbDirPath, filter);
+      Settings::dbInstance->getDbDirPath(), filter);
   // check whether the file exists
   QFile instructionFile(backupFileName);
   if (!instructionFile.open(QFile::ReadOnly)) {

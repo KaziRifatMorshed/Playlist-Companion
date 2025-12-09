@@ -45,100 +45,132 @@ AddNewPlaylistWindow::AddNewPlaylistWindow(QWidget *parent, int plListId,
     QSqlQuery playlistInfo =
         dbInstance->execQuery("SELECT * FROM Playlist WHERE playlistId = " +
                               QString::number(playlistID) + ";");
-    if (playlistInfo.size() == 1)
-      while (playlistInfo.next()) {
-        ui->folderPath->setText(playlistInfo.value("playlistPath").toString());
-        ui->playlistTitle->setText(
-            playlistInfo.value("playlistTitle").toString());
-        ui->comboBox->setCurrentText(playlistInfo.value("status").toString());
-        ui->totalVideoCount->setText(
-            playlistInfo.value("totalVideoCount").toString());
-        ui->watchedVideoCount->setText(
-            playlistInfo.value("watchedCount").toString());
-        ui->totalHourWatched->setText(
-            playlistInfo.value("totalTimeHour").toString());
-        ui->playlistCreationDate->setText(
-            playlistInfo.value("creationDateTime").toString());
-      }
+    while (playlistInfo.next()) {
+      ui->folderPath->setText(playlistInfo.value("playlistPath").toString());
+      ui->playlistTitle->setText(
+          playlistInfo.value("playlistTitle").toString());
+      ui->comboBox->setCurrentText(playlistInfo.value("status").toString());
+      ui->totalVideoCount->setText(
+          playlistInfo.value("totalVideoCount").toString());
+      ui->watchedVideoCount->setText(
+          playlistInfo.value("watchedCount").toString());
+      ui->totalHourWatched->setText(
+          playlistInfo.value("totalTimeHour").toString());
+      ui->playlistCreationDate->setText(
+          playlistInfo.value("creationDateTime").toString());
+    }
   }
 }
 
 AddNewPlaylistWindow::~AddNewPlaylistWindow() { delete ui; }
 
 void AddNewPlaylistWindow::on_pushButton_2_clicked() { // SAVE TO DB
-    // 1. Fetch data from UI
-    QString title = ui->playlistTitle->text();
-    QString path = ui->folderPath->text();
-    QString status = ui->comboBox->currentText(); // Status: Planned, Watching, Completed
+  // 1. Fetch data from UI
+  QString title = ui->playlistTitle->text();
+  QString path = ui->folderPath->text();
+  QString status =
+      ui->comboBox->currentText(); // Status: Planned, Watching, Completed
 
-    // Note: Converting UI text to Int. ensuring defaults if empty.
-    int totalCount = ui->totalVideoCount->text().toInt();
-    int watchedCount = ui->watchedVideoCount->text().toInt();
+  // Note: Converting UI text to Int. ensuring defaults if empty.
+  int totalCount = ui->totalVideoCount->text().toInt();
+  int watchedCount = ui->watchedVideoCount->text().toInt();
 
-    // Assuming you have a widget for hours, if not change this to 0 or specific widget name
-    // Based on your read logic, you seemed to imply a field for this.
-    int totalHours = ui->totalHourWatched->text().toInt(); // Replace with  if widget exists
+  // Assuming you have a widget for hours, if not change this to 0 or specific
+  // widget name Based on your read logic, you seemed to imply a field for this.
+  int totalHours =
+      ui->totalHourWatched->text().toInt(); // Replace with  if widget exists
 
-    // Simple sanitization for SQL strings (doubling single quotes)
-    QString safeTitle = title;
-    safeTitle.replace("'", "''");
-    QString safePath = path;
-    safePath.replace("'", "''");
+  // Simple sanitization for SQL strings (doubling single quotes)
+  QString safeTitle = title;
+  safeTitle.replace("'", "''");
+  QString safePath = path;
+  safePath.replace("'", "''");
 
-    /* ---- CASE 1 : New Playlist (Insert) ---- */
-    if (playlistID == -1) {
-        // A. Insert the Playlist Record
-        QString sql = QString("INSERT INTO Playlist (playlistTitle, playlistPath, status, totalVideoCount, watchedCount, totalTimeHour) "
-                              "VALUES ('%1', '%2', '%3', %4, %5, %6);")
-                          .arg(safeTitle, safePath, status)
-                          .arg(totalCount).arg(watchedCount).arg(totalHours);
+  /* ---- CASE 1 : New Playlist (Insert) ---- */
+  if (playlistID == -1) {
+    // A. Insert the Playlist Record
+    QString sql =
+        QString("INSERT INTO Playlist (playlistTitle, playlistPath, status, "
+                "totalVideoCount, watchedCount, totalTimeHour) "
+                "VALUES ('%1', '%2', '%3', %4, %5, %6);")
+            .arg(safeTitle, safePath, status)
+            .arg(totalCount)
+            .arg(watchedCount)
+            .arg(totalHours);
 
-        dbInstance->execQuery(sql);
+    QSqlQuery insertQuery = dbInstance->execQuery(sql);
 
-        // B. Get the ID of the playlist we just created
-        // We need this ID to link the videos in the Video table
-        QSqlQuery lastIdQuery = dbInstance->execQuery("SELECT last_insert_rowid();"); // NOTE: I am not sure wheter will it work
-        int newPlaylistID = -1;
-        if (lastIdQuery.next()) {
-            newPlaylistID = lastIdQuery.value(0).toInt();
-        }
+    // B. Get the ID of the playlist we just created
+    // We need this ID to link the videos in the Video table
+    // 2. Get the ID directly from the query object
+    // No need to run "SELECT last_insert_rowid()"
+    QVariant lastId = insertQuery.lastInsertId();
 
-        // C. Insert all Videos found in the directory (from vdos struct)
-        if (newPlaylistID != -1 && !vdos.fileList.isEmpty()) {
-            // Optimization: In a real app, use a Transaction here for speed
-            for (const QString &videoPath : vdos.fileList) {
-                QString safeVideoPath = videoPath;
-                safeVideoPath.replace("'", "''"); // Escape quotes in filenames
-
-                QString videoSql = QString("INSERT INTO Video (playlistID, videoPath) VALUES (%1, '%2');")
-                                       .arg(newPlaylistID).arg(safeVideoPath);
-                dbInstance->execQuery(videoSql);
-            }
-        }
+    int newPlaylistID = -1;
+    if (lastId.isValid()) {
+        newPlaylistID = lastId.toInt();
     }
 
-    /* ---- CASE 2 : Edit Existing Playlist (Update) ---- */
-    else if (playlistID >= 0) {
-        // We update Title, Status, Counts, and set updatingDateTime to NOW
-        // We usually do NOT update the Video list here unless you want to re-scan the folder
+    // C. Insert all Videos found in the directory (from vdos struct)
+/*
+    if (newPlaylistID != -1 && !vdos.fileList.isEmpty()) {
+      // Optimization: In a real app, use a Transaction here for speed
+      for (const QString &videoPath : vdos.fileList) {
+        QString safeVideoPath = videoPath;
+        safeVideoPath.replace("'", "''"); // Escape quotes in filenames
 
-        QString sql = QString("UPDATE Playlist SET "
-                              "playlistTitle = '%1', "
-                              "status = '%2', "
-                              "totalVideoCount = %3, "
-                              "watchedCount = %4, "
-                              "totalTimeHour = %5, "
-                              "updatingDateTime = CURRENT_TIMESTAMP "
-                              "WHERE playlistId = %6;")
-                          .arg(safeTitle, status)
-                          .arg(totalCount).arg(watchedCount).arg(totalHours)
-                          .arg(playlistID);
+        QString videoSql =
+            QString(
+                "INSERT INTO Video (playlistID, videoPath) VALUES (%1, '%2');")
+                .arg(newPlaylistID)
+                .arg(safeVideoPath);
+        dbInstance->execQuery(videoSql);
+      }    }
+*/
+    if (newPlaylistID != -1 && !vdos.fileList.isEmpty()) {
 
-        dbInstance->execQuery(sql);
+        // 1. Start Transaction
+        dbInstance->execQuery("BEGIN TRANSACTION;");
+
+        for (const QString &videoPath : vdos.fileList) {
+            QString safeVideoPath = videoPath;
+            safeVideoPath.replace("'", "''");
+
+            QString videoSql = QString("INSERT INTO Video (playlistID, videoPath) VALUES (%1, '%2');")
+                                   .arg(newPlaylistID).arg(safeVideoPath);
+            dbInstance->execQuery(videoSql);
+        }
+
+        // 2. Commit Transaction
+        dbInstance->execQuery("COMMIT;");
     }
+  }
 
-    // Close the window after saving
-    close();
+  /* ---- CASE 2 : Edit Existing Playlist (Update) ---- */
+  else if (playlistID >= 0) {
+    // We update Title, Status, Counts, and set updatingDateTime to NOW
+    // We usually do NOT update the Video list here unless you want to re-scan
+    // the folder
+
+    QString sql = QString("UPDATE Playlist SET "
+                          "playlistTitle = '%1', "
+                          "status = '%2', "
+                          "totalVideoCount = %3, "
+                          "watchedCount = %4, "
+                          "totalTimeHour = %5, "
+                          "updatingDateTime = CURRENT_TIMESTAMP "
+                          "WHERE playlistId = %6;")
+                      .arg(safeTitle, status)
+                      .arg(totalCount)
+                      .arg(watchedCount)
+                      .arg(totalHours)
+                      .arg(playlistID);
+
+    dbInstance->execQuery(sql);
+  }
+
+  // Close the window after saving
+  close();
 }
 
 VideoCollection AddNewPlaylistWindow::getAllVideosFromDir(QString rootPath) {

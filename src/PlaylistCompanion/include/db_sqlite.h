@@ -21,29 +21,29 @@ class SQliteDB {
 
 public:
   static SQliteDB *dbInstance;
-  static QString appPath;
-  static QString appDirPath;
-  static QString dbPath;
-  static QString dbDirPath;
+  QString getAppPath() { return appPath; }
+  QString getAppDirPath() { return appDirPath; }
+  QString getDbPath() { return dbPath; }
+  QString getDbDirPath() { return dbDirPath; }
 
   // Get the singleton instance
   static SQliteDB *instance() {
     if (!dbInstance) {
       dbdebug << "db engine started";
-      dbInstance = new SQliteDB();
+      SQliteDB::dbInstance = new SQliteDB();
 
       // generate paths
-      appPath = QCoreApplication::applicationFilePath();
-      appDirPath = QCoreApplication::applicationDirPath();
-      dbDirPath = appDirPath +
+      SQliteDB::appPath = QCoreApplication::applicationFilePath();
+      SQliteDB::appDirPath = QCoreApplication::applicationDirPath();
+      SQliteDB::dbDirPath = SQliteDB::appDirPath +
 #ifdef __linux__
-                  "/dbPlaylistCompanion/";
+                            "/dbPlaylistCompanion/";
 #elif _WIN32
-                  "\\dbPlaylistCompanion\\";
+                            "\\dbPlaylistCompanion\\";
 #endif
-      dbPath = dbDirPath + "db_PL.sqlite";
+      SQliteDB::dbPath = SQliteDB::dbDirPath + "db_PL.sqlite";
     }
-    return dbInstance;
+    return SQliteDB::dbInstance;
   }
 
   // Delete copy and assignment
@@ -55,7 +55,7 @@ public:
     if (db.isOpen())
       return true;
 
-    dbdebug << "opening db...";
+    dbdebug << "opening db... (" << dbPath << ")";
 
     // QList listOfDrivers = QSqlDatabase::drivers();
     // qDebug() << listOfDrivers;
@@ -65,7 +65,7 @@ public:
       db = QSqlDatabase::database(connectionName);
     } else {
       db = QSqlDatabase::addDatabase("QSQLITE", connectionName);
-      db.setDatabaseName(dbPath);
+      db.setDatabaseName(SQliteDB::dbPath);
     }
 
     if (!db.open()) {
@@ -118,6 +118,10 @@ private:
   ~SQliteDB() { closeDB(); }
 
   QSqlDatabase db;
+  static QString appPath;
+  static QString appDirPath;
+  static QString dbPath;
+  static QString dbDirPath;
 
   bool copyFile(QString src, QString dest) {
     // 1. Check if source exists
