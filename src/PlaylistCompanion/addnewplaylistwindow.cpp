@@ -7,6 +7,8 @@
 #include <QStringList>
 #include <QVector>
 
+#define printdebug qDebug() << "[AddEditPlaylistWindow] "
+
 AddNewPlaylistWindow::AddNewPlaylistWindow(QWidget *parent, int plListId,
                                            QString plpath)
     : QWidget(parent), ui(new Ui::AddNewPlaylistWindow),
@@ -65,6 +67,7 @@ AddNewPlaylistWindow::AddNewPlaylistWindow(QWidget *parent, int plListId,
 AddNewPlaylistWindow::~AddNewPlaylistWindow() { delete ui; }
 
 void AddNewPlaylistWindow::on_pushButton_2_clicked() { // SAVE TO DB
+    printdebug << "Started saving to DB";
   // 1. Fetch data from UI
   QString title = ui->playlistTitle->text();
   QString path = ui->folderPath->text();
@@ -170,6 +173,8 @@ void AddNewPlaylistWindow::on_pushButton_2_clicked() { // SAVE TO DB
   }
 
   // Close the window after saving
+
+  printdebug << "End saving data to DB";
   close();
 }
 
