@@ -25,24 +25,22 @@ private slots:
   void on_pushButton_3_clicked();
   void on_editPlaylistButton_clicked();
   void on_createNewPlaylist_clicked();
+  void on_removePlaylist_clicked();
   void on_playlistList_currentIndexChanged(
       int index); // Slot to handle when user selects a different playlist from
                   // the combo box
 
 private:
   Ui::MainWindow *ui;
+  int lastWatchedPlId = -1; // -1 or 0 indicates no playlist selected
+  int lastWatchedVdoId = -1;
   SQliteDB *dbInstance;
   Settings *settingsWidgt;
   AddNewPlaylistWindow *playlistWindow;
   QVector<Playlist> listOfPlaylists;
-
-  // --- New Variables for General Settings ---
-  QString defaultMediaPlayer;
-  int lastWatchedPlId = -1; // -1 or 0 indicates no playlist selected
-  int lastWatchedVdoId = -1;
-  QString currentOS;
-  // (e.g., when clicking a row)
   QVector<Video> currentVideoList; // Store videos in memory for easy access
+  QString defaultMediaPlayer;
+  QString currentOS;
 
   // --- Helper Function ---
   void initGeneralSettings();

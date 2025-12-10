@@ -27,8 +27,17 @@ void MainWindow::on_pushButton_3_clicked() {
 }
 
 void MainWindow::on_editPlaylistButton_clicked() {
-  playlistWindow = new AddNewPlaylistWindow();
-  playlistWindow->show();
+  int playlistId = ui->playlistList->currentData().toInt();
+  if (playlistId > 0) {
+    playlistWindow = new AddNewPlaylistWindow(nullptr, playlistId);
+    playlistWindow->setAttribute(Qt::WA_DeleteOnClose);
+    connect(playlistWindow, &AddNewPlaylistWindow::destroyed, this,
+            &MainWindow::updatePlaylistListCombo);
+    playlistWindow->show();
+  } else {
+    QMessageBox::warning(this, "No playlist selected",
+                         "Please select a playlist to edit.");
+  }
 }
 
 void MainWindow::on_createNewPlaylist_clicked() {
@@ -44,8 +53,33 @@ void MainWindow::on_createNewPlaylist_clicked() {
     playlistWindow = new AddNewPlaylistWindow(
         nullptr, -1, plpath); // this does not open new window, rather overrides
                               // current window
-    // playlistWindow->setAttribute(Qt::WA_DeleteOnClose);
+    playlistWindow->setAttribute(Qt::WA_DeleteOnClose);
+    connect(playlistWindow, &AddNewPlaylistWindow::destroyed, this,
+            &MainWindow::updatePlaylistListCombo);
     playlistWindow->show();
+  }
+}
+
+void MainWindow::on_removePlaylist_clicked() {
+  int playlistId = ui->playlistList->currentData().toInt();
+  if (playlistId > 0) {
+    QMessageBox::StandardButton reply;
+    reply = QMessageBox::question(
+        this, "Delete Playlist",
+        "Are you sure you want to delete this playlist and all its videos?",
+        QMessageBox::Yes | QMessageBox::No);
+    if (reply == QMessageBox::Yes) {
+      // Delete videos associated with the playlist
+      dbInstance->execQuery(
+          QString("DELETE FROM Video WHERE playlistID = %1").arg(playlistId));
+      // Delete the playlist itself
+      dbInstance->execQuery(
+          QString("DELETE FROM Playlist WHERE playlistId = %1").arg(playlistId));
+      updatePlaylistListCombo();
+    }
+  } else {
+    QMessageBox::warning(this, "No playlist selected",
+                         "Please select a playlist to remove.");
   }
 }
 
@@ -175,7 +209,7 @@ void MainWindow::populateVideoTable(int playlistId) {
 
     // 3. Prepare Query
     // We fetch videos only for the selected playlist
-    QString q = QString("SELECT * FROM Video WHERE playlistID = %1 ORDER BY videoPath ASC").arg(playlistId);
+    QString q = QString("SELECT * FROM Video WHERE playlistID = %1 ORDER BY videoID ASC").arg(playlistId);
     QSqlQuery query = dbInstance->execQuery(q);
 
     int row = 0;
@@ -214,16 +248,24 @@ void MainWindow::populateVideoTable(int playlistId) {
 }
 
 void MainWindow::on_playlistList_currentIndexChanged(int index) {
-    // Get the UserData (Playlist ID) we stored earlier in updatePlaylistListCombo
-    int playlistId = ui->playlistList->currentData().toInt(); // kmne kaj korlo !!!!
+  // Get the UserData (Playlist ID) we stored earlier in
+  // updatePlaylistListCombo
+  int playlistId =
+      ui->playlistList->currentData().toInt(); // kmne kaj korlo !!!!
 
-    if (playlistId > 0) { // -1 or 0 usually indicates invalid ID or "Select Playlist..." placeholder
-        populateVideoTable(playlistId);
-        lastWatchedPlId = playlistId; // Update the global tracker
+  bool isValidPlaylist = playlistId > 0;
+  ui->editPlaylistButton->setEnabled(isValidPlaylist);
+  ui->removePlaylist->setEnabled(isValidPlaylist);
 
-        // Update 'General' table in DB so app remembers this selection next time
-        QString q = QString("UPDATE General SET lastWatchedPlId = %1 WHERE id = 1").arg(playlistId);
-        dbInstance->execQuery(q);
-    }
-    // MainWindow::updatePlaylistListCombo(); // BUG : main window dows not launch
+  if (isValidPlaylist) { // -1 or 0 usually indicates invalid ID or "Select
+                           // Playlist..." placeholder
+    populateVideoTable(playlistId);
+    lastWatchedPlId = playlistId; // Update the global tracker
+
+    // Update 'General' table in DB so app remembers this selection next time
+    QString q = QString("UPDATE General SET lastWatchedPlId = %1 WHERE id = 1")
+                    .arg(playlistId);
+    dbInstance->execQuery(q);
+  }
+  // MainWindow::updatePlaylistListCombo(); // BUG : main window dows not launch
 }
