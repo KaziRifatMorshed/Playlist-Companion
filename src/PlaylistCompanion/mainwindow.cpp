@@ -262,10 +262,44 @@ void MainWindow::on_playlistList_currentIndexChanged(int index) {
     populateVideoTable(playlistId);
     lastWatchedPlId = playlistId; // Update the global tracker
 
+    // Find the playlist in our list
+    Playlist currentPlaylist;
+    for (const auto &pl : listOfPlaylists) {
+      if (pl.playlistId == playlistId) {
+        currentPlaylist = pl;
+        break;
+      }
+    }
+
+    // Now update the UI elements
+    ui->playlistCreationDate->setText(currentPlaylist.creationDateTime);
+    ui->lastWatched->setText(currentPlaylist.lastWatchedDateTime);
+    ui->totalTime->setText(QString::number(currentPlaylist.totalTimeHour) +
+                           " hours");
+
+    // Progress bar and count
+    if (currentPlaylist.totalVideoCount > 0) {
+      int progress =
+          (currentPlaylist.watchedCount * 100) / currentPlaylist.totalVideoCount;
+      ui->progressBar->setValue(progress);
+    } else {
+      ui->progressBar->setValue(0);
+    }
+    ui->playlistProgressCount->setText(QString("%1/%2")
+                                           .arg(currentPlaylist.watchedCount)
+                                           .arg(currentPlaylist.totalVideoCount));
+
     // Update 'General' table in DB so app remembers this selection next time
     QString q = QString("UPDATE General SET lastWatchedPlId = %1 WHERE id = 1")
                     .arg(playlistId);
     dbInstance->execQuery(q);
+  } else {
+    // Clear the labels if no playlist is selected
+    ui->playlistCreationDate->setText("");
+    ui->lastWatched->setText("");
+    ui->totalTime->setText("");
+    ui->progressBar->setValue(0);
+    ui->playlistProgressCount->setText("0/0");
   }
   // MainWindow::updatePlaylistListCombo(); // BUG : main window dows not launch
 }
