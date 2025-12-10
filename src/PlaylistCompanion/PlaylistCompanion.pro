@@ -39,3 +39,4 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 RESOURCES += \
     Playlist-Companion_resources.qrc
+QT += multimedia

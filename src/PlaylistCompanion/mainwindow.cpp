@@ -4,6 +4,8 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QMessageBox>
+#include <QRandomGenerator>
+#include <QTimer>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindow) {
@@ -30,12 +32,19 @@ MainWindow::MainWindow(QWidget *parent)
           &MainWindow::showPrevVideo_clicked);
   connect(ui->vdoNotWatched, &QPushButton::clicked, this,
           &MainWindow::vdoNotWatched_clicked);
-  connect(ui->watchedThisVdo, &QPushButton::clicked, this,
-          &MainWindow::watchedThisVdo_clicked);
-
-  // Update the video group box with the last watched video on startup
-  updateVideoGroupBox(lastWatchedVdoId);
-}
+    connect(ui->watchedThisVdo, &QPushButton::clicked, this, &MainWindow::watchedThisVdo_clicked);
+  
+    // --- Thumbnail Generation Setup ---
+    m_mediaPlayer = new QMediaPlayer(this);
+    m_videoSink = new QVideoSink(this);
+    m_mediaPlayer->setVideoSink(m_videoSink);
+  
+    // Connect the sink's frameChanged signal to a slot
+    connect(m_videoSink, &QVideoSink::videoFrameChanged, this, &MainWindow::onFrameChanged);
+  
+    // Update the video group box with the last watched video on startup
+    updateVideoGroupBox(lastWatchedVdoId);
+  }
 
 MainWindow::~MainWindow() { delete ui; }
 
@@ -566,56 +575,105 @@ void MainWindow::on_allVideosTableWidget_cellDoubleClicked(int row,
 }
 
 void MainWindow::updateVideoGroupBox(int videoId) {
-  if (videoId == -1) {
-    ui->currentVideoTitle->setText(
-        "<html><head/><body><p><span style=\" font-size:16pt;\">No Video "
-        "Selected</span></p></body></html>");
-    ui->currentVideoNumberInPlaylist->setText("");
-    return;
-  }
+    ui->currentVideoThumbnail->clear(); // Clear previous thumbnail
 
-  // Find the video in the current list
-  Video currentVideo;
-  bool found = false;
-  int videoIndex = -1;
-  for (int i = 0; i < currentVideoList.size(); ++i) {
-    if (currentVideoList[i].videoID == videoId) {
-      currentVideo = currentVideoList[i];
-      videoIndex = i;
-      found = true;
-      break;
+    if (videoId == -1) {
+        ui->currentVideoTitle->setText("No Video Selected");
+        ui->currentVideoNumberInPlaylist->setText("");
+        return;
     }
-  }
 
-  if (found) {
-    QFileInfo fileInfo(currentVideo.videoPath);
-    ui->currentVideoTitle->setText(
-        "<html><head/><body><p><span style=\" font-size:16pt;\">" +
-        fileInfo.fileName() + "</span></p></body></html>");
-    ui->currentVideoNumberInPlaylist->setText(
-        "<html><head/><body><p><span style=\" font-size:16pt;\">" +
-        QString("%1/%2").arg(videoIndex + 1).arg(currentVideoList.size()) +
-        "</span></p></body></html>");
-  } else {
-    // If not in the current list, maybe it's just from initial load.
-    // We can query the DB for the title.
-    QString q =
-        QString("SELECT videoPath FROM Video WHERE videoID = %1").arg(videoId);
-    QSqlQuery query = dbInstance->execQuery(q);
-    if (query.next()) {
-      QFileInfo fileInfo(query.value("videoPath").toString());
-      ui->currentVideoTitle->setText(
-          "<html><head/><body><p><span style=\" font-size:16pt;\">" +
-          fileInfo.fileName() + "</span></p></body></html>");
-      ui->currentVideoNumberInPlaylist->setText(
-          ""); // Can't determine number without full list
+    // Find the video in the current list
+    Video currentVideo;
+    bool found = false;
+    int videoIndex = -1;
+    for (int i = 0; i < currentVideoList.size(); ++i) {
+        if (currentVideoList[i].videoID == videoId) {
+            currentVideo = currentVideoList[i];
+            videoIndex = i;
+            found = true;
+            break;
+        }
+    }
+
+    if (found) {
+        QFileInfo fileInfo(currentVideo.videoPath);
+        ui->currentVideoTitle->setText(fileInfo.fileName());
+        ui->currentVideoNumberInPlaylist->setText(QString("%1/%2")
+                                                   .arg(videoIndex + 1)
+                                                   .arg(currentVideoList.size()));
+        // Generate a new thumbnail
+        generateThumbnail(currentVideo.videoPath);
+
     } else {
-      ui->currentVideoTitle->setText(
-          "<html><head/><body><p><span style=\" font-size:16pt;\">Video not "
-          "found</span></p></body></html>");
-      ui->currentVideoNumberInPlaylist->setText("");
+        // If not in the current list, maybe it's just from initial load.
+        // We can query the DB for the title.
+        QString q = QString("SELECT videoPath FROM Video WHERE videoID = %1").arg(videoId);
+        QSqlQuery query = dbInstance->execQuery(q);
+        if (query.next()) {
+            QString videoPath = query.value("videoPath").toString();
+            QFileInfo fileInfo(videoPath);
+            ui->currentVideoTitle->setText(fileInfo.fileName());
+            ui->currentVideoNumberInPlaylist->setText(""); // Can't determine number without full list
+            // Generate a new thumbnail
+            generateThumbnail(videoPath);
+        } else {
+            ui->currentVideoTitle->setText("Video not found");
+            ui->currentVideoNumberInPlaylist->setText("");
+        }
     }
-  }
+}
+
+void MainWindow::generateThumbnail(const QString &videoPath) {
+    if (videoPath.isEmpty() || !QFile::exists(videoPath)) {
+        ui->currentVideoThumbnail->setText("Video path invalid");
+        return;
+    }
+
+    m_mediaPlayer->setSource(QUrl::fromLocalFile(videoPath));
+
+    // We need to wait for the media to be loaded to get its duration.
+    // We connect to the durationChanged signal once.
+    QObject::connect(m_mediaPlayer, &QMediaPlayer::durationChanged, m_mediaPlayer, [=](qint64 duration) {
+        if (duration > 0) {
+            // Disconnect this connection so it doesn't fire again for this player
+            QObject::disconnect(m_mediaPlayer, &QMediaPlayer::durationChanged, nullptr, nullptr);
+
+            // Calculate a random position
+            qint64 randomPosition = QRandomGenerator::global()->bounded(duration);
+            m_mediaPlayer->setPosition(randomPosition);
+
+            // Play briefly to ensure a frame is rendered
+            m_mediaPlayer->play();
+        }
+    }, Qt::SingleShotConnection);
+
+    // If durationChanged doesn't fire (e.g., for an invalid video file),
+    // we should have a timeout.
+    QTimer::singleShot(3000, this, [=]() {
+        if (m_mediaPlayer->duration() == 0) { // If it still hasn't loaded
+            QObject::disconnect(m_mediaPlayer, &QMediaPlayer::durationChanged, nullptr, nullptr);
+            ui->currentVideoThumbnail->setText("Thumbnail failed");
+            m_mediaPlayer->stop();
+        }
+    });
+}
+
+void MainWindow::onFrameChanged(const QVideoFrame &frame) {
+    if (!frame.isValid()) {
+        return;
+    }
+    // Stop the player as soon as we have one frame.
+    m_mediaPlayer->stop();
+
+    QImage image = frame.toImage();
+    if (!image.isNull()) {
+        ui->currentVideoThumbnail->setPixmap(QPixmap::fromImage(image).scaled(
+            ui->currentVideoThumbnail->size(),
+            Qt::KeepAspectRatio,
+            Qt::SmoothTransformation
+        ));
+    }
 }
 
 // --- New Slots for Button Clicks ---

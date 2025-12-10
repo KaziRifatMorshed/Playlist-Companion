@@ -7,6 +7,10 @@
 #include <include/db_sqlite.h>
 #include <include/structures.h>
 #include <settings.h>
+#include <QMediaPlayer>
+#include <QVideoSink>
+#include <QVideoFrame>
+#include <QImage>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -35,6 +39,7 @@ private slots:
   void showPrevVideo_clicked();
   void vdoNotWatched_clicked();
   void watchedThisVdo_clicked();
+  void onFrameChanged(const QVideoFrame &frame);
 
 
 private:
@@ -64,5 +69,9 @@ private:
   void watchedThisVdo(int videoId); // Marks a video as watched
   QString currentVideoTitle();      // Returns the title of the current video
   void updateVideoGroupBox(int videoId); // Updates the video group box UI
+
+  QMediaPlayer *m_mediaPlayer;
+  QVideoSink *m_videoSink;
+  void generateThumbnail(const QString &videoPath);
 };
 #endif // MAINWINDOW_H
