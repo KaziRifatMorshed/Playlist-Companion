@@ -6,6 +6,7 @@
 #include <QDirIterator>
 #include <QStringList>
 #include <QVector>
+#include <algorithm>
 
 #define printdebug qDebug() << "[AddEditPlaylistWindow] "
 
@@ -42,7 +43,7 @@ AddNewPlaylistWindow::AddNewPlaylistWindow(QWidget *parent, int plListId,
         "font-size:16pt;\">Edit Playlist</span></p></body></html>");
 
     // NOTE: fetch info from database
-    vdos = getAllVideosFromDB();
+    vdos = AddNewPlaylistWindow::getAllVideosFromDB();
 
     QSqlQuery playlistInfo =
         dbInstance->execQuery("SELECT * FROM Playlist WHERE playlistId = " +
@@ -203,6 +204,31 @@ VideoCollection AddNewPlaylistWindow::getAllVideosFromDir(QString rootPath) {
     result.count++;
   }
 
+  std::sort(result.fileList.begin(), result.fileList.end(),
+            [](const QString &s1, const QString &s2) {
+              int i = 0, j = 0;
+              while (i < s1.length() && j < s2.length()) {
+                if (s1[i].isDigit() && s2[j].isDigit()) {
+                  long long n1 = 0, n2 = 0;
+                  while (i < s1.length() && s1[i].isDigit()) {
+                    n1 = n1 * 10 + s1[i++].digitValue();
+                  }
+                  while (j < s2.length() && s2[j].isDigit()) {
+                    n2 = n2 * 10 + s2[j++].digitValue();
+                  }
+                  if (n1 != n2) {
+                    return n1 < n2;
+                  }
+                } else {
+                  if (s1[i].toLower() != s2[j].toLower()) {
+                    return s1[i].toLower() < s2[j].toLower();
+                  }
+                  i++;
+                  j++;
+                }
+              }
+              return s1.length() < s2.length();
+            });
   return result;
 }
 
