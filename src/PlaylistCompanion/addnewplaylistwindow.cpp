@@ -1,5 +1,6 @@
 #include "addnewplaylistwindow.h"
 #include "ui_addnewplaylistwindow.h"
+#include <QCollator>
 #include <QDateTime>
 #include <QDebug>
 #include <QDir>
@@ -68,7 +69,7 @@ AddNewPlaylistWindow::AddNewPlaylistWindow(QWidget *parent, int plListId,
 AddNewPlaylistWindow::~AddNewPlaylistWindow() { delete ui; }
 
 void AddNewPlaylistWindow::on_pushButton_2_clicked() { // SAVE TO DB
-    printdebug << "Started saving to DB";
+  printdebug << "Started saving to DB";
   // 1. Fetch data from UI
   QString title = ui->playlistTitle->text();
   QString path = ui->folderPath->text();
@@ -112,16 +113,33 @@ void AddNewPlaylistWindow::on_pushButton_2_clicked() { // SAVE TO DB
 
     int newPlaylistID = -1;
     if (lastId.isValid()) {
-        newPlaylistID = lastId.toInt();
+      newPlaylistID = lastId.toInt();
     }
 
     // C. Insert all Videos found in the directory (from vdos struct)
-/*
+    /*
+        if (newPlaylistID != -1 && !vdos.fileList.isEmpty()) {
+          // Optimization: In a real app, use a Transaction here for speed
+          for (const QString &videoPath : vdos.fileList) {
+            QString safeVideoPath = videoPath;
+            safeVideoPath.replace("'", "''"); // Escape quotes in filenames
+
+            QString videoSql =
+                QString(
+                    "INSERT INTO Video (playlistID, videoPath) VALUES (%1,
+       '%2');") .arg(newPlaylistID) .arg(safeVideoPath);
+            dbInstance->execQuery(videoSql);
+          }    }
+    */
     if (newPlaylistID != -1 && !vdos.fileList.isEmpty()) {
-      // Optimization: In a real app, use a Transaction here for speed
+
+      // 1. Start Transaction
+      dbInstance->execQuery("BEGIN TRANSACTION;");
+
       for (const QString &videoPath : vdos.fileList) {
         QString safeVideoPath = videoPath;
-        safeVideoPath.replace("'", "''"); // Escape quotes in filenames
+        qDebug() << safeVideoPath;
+        safeVideoPath.replace("'", "''");
 
         QString videoSql =
             QString(
@@ -129,25 +147,10 @@ void AddNewPlaylistWindow::on_pushButton_2_clicked() { // SAVE TO DB
                 .arg(newPlaylistID)
                 .arg(safeVideoPath);
         dbInstance->execQuery(videoSql);
-      }    }
-*/
-    if (newPlaylistID != -1 && !vdos.fileList.isEmpty()) {
+      }
 
-        // 1. Start Transaction
-        dbInstance->execQuery("BEGIN TRANSACTION;");
-
-        for (const QString &videoPath : vdos.fileList) {
-            QString safeVideoPath = videoPath;
-            qDebug() << safeVideoPath;
-            safeVideoPath.replace("'", "''");
-
-            QString videoSql = QString("INSERT INTO Video (playlistID, videoPath) VALUES (%1, '%2');")
-                                   .arg(newPlaylistID).arg(safeVideoPath);
-            dbInstance->execQuery(videoSql);
-        }
-
-        // 2. Commit Transaction
-        dbInstance->execQuery("COMMIT;");
+      // 2. Commit Transaction
+      dbInstance->execQuery("COMMIT;");
     }
   }
 
@@ -204,31 +207,10 @@ VideoCollection AddNewPlaylistWindow::getAllVideosFromDir(QString rootPath) {
     result.count++;
   }
 
-  std::sort(result.fileList.begin(), result.fileList.end(),
-            [](const QString &s1, const QString &s2) {
-              int i = 0, j = 0;
-              while (i < s1.length() && j < s2.length()) {
-                if (s1[i].isDigit() && s2[j].isDigit()) {
-                  long long n1 = 0, n2 = 0;
-                  while (i < s1.length() && s1[i].isDigit()) {
-                    n1 = n1 * 10 + s1[i++].digitValue();
-                  }
-                  while (j < s2.length() && s2[j].isDigit()) {
-                    n2 = n2 * 10 + s2[j++].digitValue();
-                  }
-                  if (n1 != n2) {
-                    return n1 < n2;
-                  }
-                } else {
-                  if (s1[i].toLower() != s2[j].toLower()) {
-                    return s1[i].toLower() < s2[j].toLower();
-                  }
-                  i++;
-                  j++;
-                }
-              }
-              return s1.length() < s2.length();
-            });
+  QCollator collator;
+  collator.setNumericMode(true);
+  collator.setCaseSensitivity(Qt::CaseInsensitive);
+  std::sort(result.fileList.begin(), result.fileList.end(), collator);
   return result;
 }
 
