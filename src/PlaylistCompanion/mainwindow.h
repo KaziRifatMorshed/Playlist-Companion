@@ -29,11 +29,20 @@ private slots:
   void on_playlistList_currentIndexChanged(
       int index); // Slot to handle when user selects a different playlist from
                   // the combo box
+  void on_allVideosTableWidget_cellDoubleClicked(int row, int column);
+  void playThisVdo_clicked();
+  void showNextVideo_clicked();
+  void showPrevVideo_clicked();
+  void vdoNotWatched_clicked();
+  void watchedThisVdo_clicked();
+
 
 private:
   Ui::MainWindow *ui;
   int lastWatchedPlId = -1; // -1 or 0 indicates no playlist selected
   int lastWatchedVdoId = -1;
+  int currentPlayingVideoId = -1; // New member to track the currently playing video ID
+
   SQliteDB *dbInstance;
   Settings *settingsWidgt;
   AddNewPlaylistWindow *playlistWindow;
@@ -47,5 +56,13 @@ private:
   void updatePlaylistListCombo();
   void populateVideoTable(
       int playlistId); // Helper function to load videos for a specific playlist
+  int currentVideoNumberInPlaylist(); // Returns the 0-based index of the current video
+  void playThisVdo(int videoId); // Launches the video player for the given video ID
+  void showNextVideo();         // Plays the next video in the playlist
+  void showPrevVideo();         // Plays the previous video in the playlist
+  void vdoNotWatched(int videoId); // Marks a video as unwatched
+  void watchedThisVdo(int videoId); // Marks a video as watched
+  QString currentVideoTitle();      // Returns the title of the current video
+  void updateVideoGroupBox(int videoId); // Updates the video group box UI
 };
 #endif // MAINWINDOW_H

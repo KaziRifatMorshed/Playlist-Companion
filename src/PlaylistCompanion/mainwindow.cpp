@@ -1,9 +1,9 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include <QFileDialog>
-#include <QMessageBox>
-#include <QFileInfo>
 #include <QDebug>
+#include <QFileDialog>
+#include <QFileInfo>
+#include <QMessageBox>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindow) {
@@ -12,18 +12,41 @@ MainWindow::MainWindow(QWidget *parent)
   initGeneralSettings();
   MainWindow::updatePlaylistListCombo();
   MainWindow::populateVideoTable(MainWindow::lastWatchedPlId);
+
+  // Initialize currentPlayingVideoId from lastWatchedVdoId for the currently
+  // loaded playlist
+  currentPlayingVideoId = lastWatchedVdoId;
+
+  // The on_allVideosTableWidget_cellDoubleClicked slot is auto-connected by the
+  // uic. A manual connect call is not needed and would cause the slot to fire
+  // twice.
+
+  // Connect the buttons in the video group box
+  connect(ui->playThisVdo, &QPushButton::clicked, this,
+          &MainWindow::playThisVdo_clicked);
+  connect(ui->showNextVideo, &QPushButton::clicked, this,
+          &MainWindow::showNextVideo_clicked);
+  connect(ui->showPrevVideo, &QPushButton::clicked, this,
+          &MainWindow::showPrevVideo_clicked);
+  connect(ui->vdoNotWatched, &QPushButton::clicked, this,
+          &MainWindow::vdoNotWatched_clicked);
+  connect(ui->watchedThisVdo, &QPushButton::clicked, this,
+          &MainWindow::watchedThisVdo_clicked);
+
+  // Update the video group box with the last watched video on startup
+  updateVideoGroupBox(lastWatchedVdoId);
 }
 
 MainWindow::~MainWindow() { delete ui; }
 
 void MainWindow::on_pushButton_3_clicked() {
-    settingsWidgt = new Settings();
-    // 2. Set Modality: This disables the MainWindow while Settings is open
-    settingsWidgt->setWindowModality(Qt::ApplicationModal);
-    // 3. (Optional) Make sure it deletes itself from memory when closed
-    // preventing memory leaks since you use 'new' every time.
-    settingsWidgt->setAttribute(Qt::WA_DeleteOnClose);
-    settingsWidgt->show();
+  settingsWidgt = new Settings();
+  // 2. Set Modality: This disables the MainWindow while Settings is open
+  settingsWidgt->setWindowModality(Qt::ApplicationModal);
+  // 3. (Optional) Make sure it deletes itself from memory when closed
+  // preventing memory leaks since you use 'new' every time.
+  settingsWidgt->setAttribute(Qt::WA_DeleteOnClose);
+  settingsWidgt->show();
 }
 
 void MainWindow::on_editPlaylistButton_clicked() {
@@ -74,7 +97,8 @@ void MainWindow::on_removePlaylist_clicked() {
           QString("DELETE FROM Video WHERE playlistID = %1").arg(playlistId));
       // Delete the playlist itself
       dbInstance->execQuery(
-          QString("DELETE FROM Playlist WHERE playlistId = %1").arg(playlistId));
+          QString("DELETE FROM Playlist WHERE playlistId = %1")
+              .arg(playlistId));
       updatePlaylistListCombo();
     }
   } else {
@@ -137,114 +161,137 @@ void MainWindow::initGeneralSettings() {
         << currentOS;
     MainWindow::on_pushButton_3_clicked();
   }
-
 }
 
 void MainWindow::updatePlaylistListCombo() {
-    QComboBox* combo = ui->playlistList;
+  QComboBox *combo = ui->playlistList;
 
-    // 2. Clear previous data to avoid duplicates
-    listOfPlaylists.clear();
-    combo->clear();
+  // 2. Clear previous data to avoid duplicates
+  listOfPlaylists.clear();
+  combo->clear();
 
-    // 3. Execute Query to fetch all playlists
-    // We select all columns to populate the full struct
-    QString q = "SELECT * FROM Playlist ORDER BY playlistId ASC";
-    QSqlQuery query = dbInstance->execQuery(q);
+  // 3. Execute Query to fetch all playlists
+  // We select all columns to populate the full struct
+  QString q = "SELECT * FROM Playlist ORDER BY playlistId ASC";
+  QSqlQuery query = dbInstance->execQuery(q);
 
-    // 4. Iterate through results
-    while (query.next()) {
-        Playlist pl;
+  // 4. Iterate through results
+  while (query.next()) {
+    Playlist pl;
 
-        // --- MAP DB COLUMNS TO STRUCT ---
-        // (Ensure these variable names match your structures.h definition)
-        pl.playlistId = query.value("playlistId").toInt();
-        pl.playlistTitle = query.value("playlistTitle").toString();
-        pl.playlistPath = query.value("playlistPath").toString();
-        pl.status = query.value("status").toString();
+    // --- MAP DB COLUMNS TO STRUCT ---
+    // (Ensure these variable names match your structures.h definition)
+    pl.playlistId = query.value("playlistId").toInt();
+    pl.playlistTitle = query.value("playlistTitle").toString();
+    pl.playlistPath = query.value("playlistPath").toString();
+    pl.status = query.value("status").toString();
 
-        pl.totalVideoCount = query.value("totalVideoCount").toInt();
-        pl.watchedCount = query.value("watchedCount").toInt();
-        pl.totalTimeHour = query.value("totalTimeHour").toInt();
+    pl.totalVideoCount = query.value("totalVideoCount").toInt();
+    pl.watchedCount = query.value("watchedCount").toInt();
+    pl.totalTimeHour = query.value("totalTimeHour").toInt();
 
-        // Retrieve Dates
-        pl.creationDateTime = query.value("creationDateTime").toString();
-        pl.lastWatchedDateTime = query.value("lastWatchedDateTime").toString();
-        // -------------------------------
+    // Retrieve Dates
+    pl.creationDateTime = query.value("creationDateTime").toString();
+    pl.lastWatchedDateTime = query.value("lastWatchedDateTime").toString();
+    // -------------------------------
 
-        // 5. Add to the member vector
-        listOfPlaylists.append(pl);
+    // 5. Add to the member vector
+    listOfPlaylists.append(pl);
 
-        // 6. Add to the UI ComboBox
-        // Argument 1: Text to display (Title)
-        // Argument 2: UserData (The ID, hidden) - useful for retrieving the specific playlist later
-        combo->addItem(pl.playlistTitle, pl.playlistId);
+    // 6. Add to the UI ComboBox
+    // Argument 1: Text to display (Title)
+    // Argument 2: UserData (The ID, hidden) - useful for retrieving the
+    // specific playlist later
+    combo->addItem(pl.playlistTitle, pl.playlistId);
+  }
+
+  // 7. (Optional) Auto-select the last watched playlist
+  // 'lastWatchedPlId' was loaded in initGeneralSettings()
+  if (lastWatchedPlId != -1) {
+    int index = combo->findData(lastWatchedPlId);
+    if (index != -1) {
+      combo->setCurrentIndex(index);
     }
+  }
 
-    // 7. (Optional) Auto-select the last watched playlist
-    // 'lastWatchedPlId' was loaded in initGeneralSettings()
-    if (lastWatchedPlId != -1) {
-        int index = combo->findData(lastWatchedPlId);
-        if (index != -1) {
-            combo->setCurrentIndex(index);
-        }
-    }
-
-    qDebug() << "[MainWindow] Playlist combo refreshed. Count:" << listOfPlaylists.size();
+  qDebug() << "[MainWindow] Playlist combo refreshed. Count:"
+           << listOfPlaylists.size();
 }
 
 void MainWindow::populateVideoTable(int playlistId) {
-    // 1. Clear existing data
-    currentVideoList.clear();
-    ui->allVideosTableWidget->setRowCount(0);
+  // 1. Clear existing data
+  currentVideoList.clear();
+  ui->allVideosTableWidget->setRowCount(0);
 
-    // 2. Setup Table Headers (if not done in UI designer)
-    // Column 0: Watched Status, Column 1: Video Name
-    ui->allVideosTableWidget->setColumnCount(2);
-    ui->allVideosTableWidget->setHorizontalHeaderLabels(QStringList() << "Watched" << "Video Name");
+  // 2. Setup Table Headers (if not done in UI designer)
+  // Column 0: Watched Status, Column 1: Video Name
+  ui->allVideosTableWidget->setColumnCount(2);
+  ui->allVideosTableWidget->setHorizontalHeaderLabels(
+      QStringList() << "Watched" << "Video Name");
 
-    // Adjust column widths (Status column small, Name column stretches)
-    ui->allVideosTableWidget->setColumnWidth(0, 80);
-    ui->allVideosTableWidget->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
+  // Adjust column widths (Status column small, Name column stretches)
+  ui->allVideosTableWidget->setColumnWidth(0, 80);
+  ui->allVideosTableWidget->horizontalHeader()->setSectionResizeMode(
+      1, QHeaderView::Stretch);
 
-    // 3. Prepare Query
-    // We fetch videos only for the selected playlist
-    QString q = QString("SELECT * FROM Video WHERE playlistID = %1 ORDER BY videoID ASC").arg(playlistId);
-    QSqlQuery query = dbInstance->execQuery(q);
+  // 3. Prepare Query
+  // We fetch videos only for the selected playlist
+  QString q =
+      QString("SELECT * FROM Video WHERE playlistID = %1 ORDER BY videoID ASC")
+          .arg(playlistId);
+  QSqlQuery query = dbInstance->execQuery(q);
 
-    int row = 0;
-    while (query.next()) {
-        Video vdo;
-        vdo.videoID = query.value("videoID").toInt();
-        vdo.playlistID = query.value("playlistID").toInt();
-        vdo.videoPath = query.value("videoPath").toString();
-        vdo.isWatched = query.value("isWatched").toInt();
+  int row = 0;
+  while (query.next()) {
+    Video vdo;
+    vdo.videoID = query.value("videoID").toInt();
+    vdo.playlistID = query.value("playlistID").toInt();
+    vdo.videoPath = query.value("videoPath").toString();
+    vdo.isWatched = query.value("isWatched").toInt();
 
-        // Add to local memory vector
-        currentVideoList.append(vdo);
+    // Add to local memory vector
+    currentVideoList.append(vdo);
 
-        // --- UI POPULATION ---
-        ui->allVideosTableWidget->insertRow(row);
+    // --- UI POPULATION ---
+    ui->allVideosTableWidget->insertRow(row);
 
-        // Col 0: Watched Status (Checkbox)
-        QTableWidgetItem *statusItem = new QTableWidgetItem();
-        statusItem->setFlags(Qt::ItemIsUserCheckable | Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-        // BUG: user checkbox e check kore data change kortese but database e save hocche na
-        statusItem->setCheckState(vdo.isWatched ? Qt::Checked : Qt::Unchecked); // Set Checkbox state based on DB value
-        statusItem->setData(Qt::UserRole, vdo.videoID); // Store the videoID in the item so we can identify it later if clicked
+    // Col 0: Watched Status (Checkbox)
+    QTableWidgetItem *statusItem = new QTableWidgetItem();
+    statusItem->setFlags(Qt::ItemIsUserCheckable | Qt::ItemIsEnabled |
+                         Qt::ItemIsSelectable);
+    // BUG: user checkbox e check kore data change kortese but database e save
+    // hocche na
+    statusItem->setCheckState(
+        vdo.isWatched ? Qt::Checked
+                      : Qt::Unchecked); // Set Checkbox state based on DB value
+    statusItem->setData(Qt::UserRole,
+                        vdo.videoID); // Store the videoID in the item so we can
+                                      // identify it later if clicked
 
-        ui->allVideosTableWidget->setItem(row, 0, statusItem);
+    ui->allVideosTableWidget->setItem(row, 0, statusItem);
 
-        // Col 1: Video Name (Clean display)
-        QFileInfo fileInfo(vdo.videoPath);
-        QTableWidgetItem *nameItem = new QTableWidgetItem(fileInfo.fileName());
-        // Make it read-only (user can't rename file here)
-        nameItem->setFlags(nameItem->flags() ^ Qt::ItemIsEditable);
+    // Col 1: Video Name (Clean display)
+    QFileInfo fileInfo(vdo.videoPath);
+    QTableWidgetItem *nameItem = new QTableWidgetItem(fileInfo.fileName());
+    // Make it read-only (user can't rename file here)
+    nameItem->setFlags(nameItem->flags() ^ Qt::ItemIsEditable);
 
-        ui->allVideosTableWidget->setItem(row, 1, nameItem);
+    ui->allVideosTableWidget->setItem(row, 1, nameItem);
 
-        row++;
+    // Highlight the current playing video
+    if (vdo.videoID == currentPlayingVideoId) {
+      for (int col = 0; col < ui->allVideosTableWidget->columnCount(); ++col) {
+        QTableWidgetItem *itemToHighlight =
+            ui->allVideosTableWidget->item(row, col);
+        if (itemToHighlight) {
+          itemToHighlight->setBackground(
+              QColor(Qt::yellow).lighter(15)); // Light yellow
+        }
+      }
     }
+
+    row++;
+  }
 }
 
 void MainWindow::on_playlistList_currentIndexChanged(int index) {
@@ -258,7 +305,30 @@ void MainWindow::on_playlistList_currentIndexChanged(int index) {
   ui->removePlaylist->setEnabled(isValidPlaylist);
 
   if (isValidPlaylist) { // -1 or 0 usually indicates invalid ID or "Select
-                           // Playlist..." placeholder
+                         // Playlist..." placeholder
+    // Determine currentPlayingVideoId for the newly selected playlist
+    QString queryLastVdoId =
+        QString("SELECT lastWatchedVdoId FROM General WHERE id = 1");
+    QSqlQuery query = dbInstance->execQuery(queryLastVdoId);
+    int generalLastVdoId = -1;
+    if (query.next()) {
+      generalLastVdoId = query.value("lastWatchedVdoId").toInt();
+    }
+
+    currentPlayingVideoId = -1; // Reset before checking
+    if (generalLastVdoId != -1) {
+      // Check if the last watched video from General settings belongs to the
+      // currently selected playlist
+      QString checkVdoPlaylist = QString("SELECT videoID FROM Video WHERE "
+                                         "videoID = %1 AND playlistID = %2")
+                                     .arg(generalLastVdoId)
+                                     .arg(playlistId);
+      QSqlQuery checkQuery = dbInstance->execQuery(checkVdoPlaylist);
+      if (checkQuery.next()) {
+        currentPlayingVideoId = generalLastVdoId; // It belongs, so set it
+      }
+    }
+
     populateVideoTable(playlistId);
     lastWatchedPlId = playlistId; // Update the global tracker
 
@@ -279,15 +349,16 @@ void MainWindow::on_playlistList_currentIndexChanged(int index) {
 
     // Progress bar and count
     if (currentPlaylist.totalVideoCount > 0) {
-      int progress =
-          (currentPlaylist.watchedCount * 100) / currentPlaylist.totalVideoCount;
+      int progress = (currentPlaylist.watchedCount * 100) /
+                     currentPlaylist.totalVideoCount;
       ui->progressBar->setValue(progress);
     } else {
       ui->progressBar->setValue(0);
     }
-    ui->playlistProgressCount->setText(QString("%1/%2")
-                                           .arg(currentPlaylist.watchedCount)
-                                           .arg(currentPlaylist.totalVideoCount));
+    ui->playlistProgressCount->setText(
+        QString("%1/%2")
+            .arg(currentPlaylist.watchedCount)
+            .arg(currentPlaylist.totalVideoCount));
 
     // Update 'General' table in DB so app remembers this selection next time
     QString q = QString("UPDATE General SET lastWatchedPlId = %1 WHERE id = 1")
@@ -301,5 +372,277 @@ void MainWindow::on_playlistList_currentIndexChanged(int index) {
     ui->progressBar->setValue(0);
     ui->playlistProgressCount->setText("0/0");
   }
-  // MainWindow::updatePlaylistListCombo(); // BUG : main window dows not launch
+}
+
+// --- Video Playback & Navigation ---
+int MainWindow::currentVideoNumberInPlaylist() {
+  for (int i = 0; i < currentVideoList.size(); ++i) {
+    if (currentVideoList[i].videoID == currentPlayingVideoId) {
+      return i;
+    }
+  }
+  return -1; // Not found
+}
+
+void MainWindow::watchedThisVdo(int videoId) {
+  // First, check if the video is already watched. If so, do nothing.
+  Video currentVideo;
+  bool found = false;
+  for (const auto &vdo : currentVideoList) {
+    if (vdo.videoID == videoId) {
+      currentVideo = vdo;
+      found = true;
+      break;
+    }
+  }
+  if (found && currentVideo.isWatched) {
+    // If already watched, just move to the next video's info
+    showNextVideo();
+    return;
+  }
+
+  // --- Mark as Watched ---
+  QString updateVideoQuery =
+      QString("UPDATE Video SET isWatched = 1 WHERE videoID = %1").arg(videoId);
+  dbInstance->execQuery(updateVideoQuery);
+
+  // Update the playlist's watchedCount
+  int currentPlaylistId = ui->playlistList->currentData().toInt();
+  if (currentPlaylistId > 0) {
+    QString updatePlaylistQuery =
+        QString("UPDATE Playlist SET watchedCount = watchedCount + 1, "
+                "lastWatchedDateTime = '%1' WHERE playlistId = %2")
+            .arg(QDateTime::currentDateTime().toString(Qt::ISODate))
+            .arg(currentPlaylistId);
+    dbInstance->execQuery(updatePlaylistQuery);
+    updatePlaylistListCombo(); // Refresh playlist combo to update counts
+  }
+
+  // --- Advance to Next Video ---
+  showNextVideo();
+}
+
+void MainWindow::vdoNotWatched(int videoId) {
+  QString updateVideoQuery =
+      QString("UPDATE Video SET isWatched = 0 WHERE videoID = %1").arg(videoId);
+  dbInstance->execQuery(updateVideoQuery);
+
+  // Update the playlist's watchedCount
+  int currentPlaylistId = ui->playlistList->currentData().toInt();
+  if (currentPlaylistId > 0) {
+    QString updatePlaylistQuery =
+        QString("UPDATE Playlist SET watchedCount = watchedCount - 1 WHERE "
+                "playlistId = %1")
+            .arg(currentPlaylistId);
+    dbInstance->execQuery(updatePlaylistQuery);
+    updatePlaylistListCombo(); // Refresh playlist combo to update counts
+    populateVideoTable(currentPlaylistId); // Refresh video table
+  }
+}
+
+void MainWindow::playThisVdo(int videoId) {
+  // 1. Find the video in the currentVideoList
+  Video targetVideo;
+  bool found = false;
+  for (const auto &vdo : currentVideoList) {
+    if (vdo.videoID == videoId) {
+      targetVideo = vdo;
+      found = true;
+      break;
+    }
+  }
+
+  if (!found) {
+    QMessageBox::warning(this, "Playback Error",
+                         "Video not found in current playlist.");
+    return;
+  }
+
+  // 2. Update current playing video ID
+  currentPlayingVideoId = videoId;
+  lastWatchedVdoId = videoId;   // Also update last watched for session
+  updateVideoGroupBox(videoId); // Update the UI to reflect the new video
+
+  // 3. Mark as watched if not already (REMOVED as per user request)
+  // if (!targetVideo.isWatched) {
+  //     watchedThisVdo(videoId);
+  // }
+  // Refresh table to update highlight (handled by populateVideoTable)
+  populateVideoTable(targetVideo.playlistID);
+
+  // 4. Update lastWatchedVdoId in General settings
+  QString updateGeneralQuery =
+      QString("UPDATE General SET lastWatchedVdoId = %1 WHERE id = 1")
+          .arg(videoId);
+  dbInstance->execQuery(updateGeneralQuery);
+
+  // 5. Launch the video using QProcess
+  QString program = defaultMediaPlayer;
+  QStringList arguments;
+  arguments << targetVideo.videoPath;
+
+  // TODO: Add support for resumeTime if the media player supports it
+  // For VLC, it might be something like: arguments << "--start-time" <<
+  // QString::number(targetVideo.resumeTime);
+
+  QProcess *process = new QProcess(this);
+  process->start(program, arguments);
+  if (!process->waitForStarted()) {
+    QMessageBox::critical(this, "Player Launch Error",
+                          "Could not start media player: " + program);
+    qDebug() << "Failed to start media player:" << process->errorString();
+  } else {
+    qDebug() << "Playing video:" << targetVideo.videoPath;
+    qDebug() << "With player:" << program;
+  }
+}
+
+void MainWindow::showNextVideo() {
+  int currentIdx = currentVideoNumberInPlaylist();
+  if (currentIdx != -1 && currentIdx < currentVideoList.size() - 1) {
+    currentPlayingVideoId = currentVideoList[currentIdx + 1].videoID;
+    updateVideoGroupBox(currentPlayingVideoId);
+    populateVideoTable(lastWatchedPlId); // Repopulate to update highlight
+  } else if (currentIdx == currentVideoList.size() - 1) {
+    QMessageBox::information(this, "End of Playlist",
+                             "This is the last video in the playlist.");
+  } else {
+    // If no video is playing, select the first one
+    if (!currentVideoList.isEmpty()) {
+      currentPlayingVideoId = currentVideoList[0].videoID;
+      updateVideoGroupBox(currentPlayingVideoId);
+      populateVideoTable(lastWatchedPlId);
+    } else {
+      QMessageBox::warning(this, "Navigation Error", "Playlist is empty.");
+    }
+  }
+}
+
+void MainWindow::showPrevVideo() {
+  int currentIdx = currentVideoNumberInPlaylist();
+  if (currentIdx > 0) {
+    currentPlayingVideoId = currentVideoList[currentIdx - 1].videoID;
+    updateVideoGroupBox(currentPlayingVideoId);
+    populateVideoTable(lastWatchedPlId); // Repopulate to update highlight
+  } else if (currentIdx == 0) {
+    QMessageBox::information(this, "Beginning of Playlist",
+                             "This is the first video in the playlist.");
+  } else {
+    // If no video is playing, select the last one
+    if (!currentVideoList.isEmpty()) {
+      currentPlayingVideoId = currentVideoList.last().videoID;
+      updateVideoGroupBox(currentPlayingVideoId);
+      populateVideoTable(lastWatchedPlId);
+    } else {
+      QMessageBox::warning(this, "Navigation Error", "Playlist is empty.");
+    }
+  }
+}
+
+QString MainWindow::currentVideoTitle() {
+  for (const auto &vdo : currentVideoList) {
+    if (vdo.videoID == currentPlayingVideoId) {
+      QFileInfo fileInfo(vdo.videoPath);
+      return fileInfo.fileName();
+    }
+  }
+  return "No Video Playing";
+}
+
+void MainWindow::on_allVideosTableWidget_cellDoubleClicked(int row,
+                                                           int column) {
+  // Get the video ID from the clicked row (stored in the first column's item
+  // data)
+  QTableWidgetItem *item = ui->allVideosTableWidget->item(row, 0);
+  if (item) {
+    int videoId = item->data(Qt::UserRole).toInt();
+    if (videoId > 0) {
+      // Do NOT play the video, just update the current selection and UI
+      currentPlayingVideoId = videoId;
+      populateVideoTable(lastWatchedPlId); // Re-populate to update highlight
+      updateVideoGroupBox(currentPlayingVideoId); // Update the info box
+    }
+  }
+}
+
+void MainWindow::updateVideoGroupBox(int videoId) {
+  if (videoId == -1) {
+    ui->currentVideoTitle->setText(
+        "<html><head/><body><p><span style=\" font-size:16pt;\">No Video "
+        "Selected</span></p></body></html>");
+    ui->currentVideoNumberInPlaylist->setText("");
+    return;
+  }
+
+  // Find the video in the current list
+  Video currentVideo;
+  bool found = false;
+  int videoIndex = -1;
+  for (int i = 0; i < currentVideoList.size(); ++i) {
+    if (currentVideoList[i].videoID == videoId) {
+      currentVideo = currentVideoList[i];
+      videoIndex = i;
+      found = true;
+      break;
+    }
+  }
+
+  if (found) {
+    QFileInfo fileInfo(currentVideo.videoPath);
+    ui->currentVideoTitle->setText(
+        "<html><head/><body><p><span style=\" font-size:16pt;\">" +
+        fileInfo.fileName() + "</span></p></body></html>");
+    ui->currentVideoNumberInPlaylist->setText(
+        "<html><head/><body><p><span style=\" font-size:16pt;\">" +
+        QString("%1/%2").arg(videoIndex + 1).arg(currentVideoList.size()) +
+        "</span></p></body></html>");
+  } else {
+    // If not in the current list, maybe it's just from initial load.
+    // We can query the DB for the title.
+    QString q =
+        QString("SELECT videoPath FROM Video WHERE videoID = %1").arg(videoId);
+    QSqlQuery query = dbInstance->execQuery(q);
+    if (query.next()) {
+      QFileInfo fileInfo(query.value("videoPath").toString());
+      ui->currentVideoTitle->setText(
+          "<html><head/><body><p><span style=\" font-size:16pt;\">" +
+          fileInfo.fileName() + "</span></p></body></html>");
+      ui->currentVideoNumberInPlaylist->setText(
+          ""); // Can't determine number without full list
+    } else {
+      ui->currentVideoTitle->setText(
+          "<html><head/><body><p><span style=\" font-size:16pt;\">Video not "
+          "found</span></p></body></html>");
+      ui->currentVideoNumberInPlaylist->setText("");
+    }
+  }
+}
+
+// --- New Slots for Button Clicks ---
+void MainWindow::playThisVdo_clicked() {
+  if (currentPlayingVideoId != -1) {
+    playThisVdo(currentPlayingVideoId);
+  } else {
+    QMessageBox::information(this, "No Video", "No video selected to play.");
+  }
+}
+
+void MainWindow::showNextVideo_clicked() { showNextVideo(); }
+
+void MainWindow::showPrevVideo_clicked() { showPrevVideo(); }
+
+void MainWindow::vdoNotWatched_clicked() {
+  if (currentPlayingVideoId != -1) {
+    vdoNotWatched(currentPlayingVideoId);
+  } else {
+    QMessageBox::information(this, "No Video", "No video selected.");
+  }
+}
+
+void MainWindow::watchedThisVdo_clicked() {
+  if (currentPlayingVideoId != -1) {
+    watchedThisVdo(currentPlayingVideoId);
+  } else {
+    QMessageBox::information(this, "No Video", "No video selected.");
+  }
 }
