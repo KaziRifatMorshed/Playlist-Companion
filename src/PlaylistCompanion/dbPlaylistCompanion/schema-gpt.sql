@@ -37,7 +37,8 @@ CREATE TABLE IF NOT EXISTS Video (
     videoID INTEGER PRIMARY KEY AUTOINCREMENT,
     playlistID INTEGER NOT NULL,
     videoPath TEXT NOT NULL,
-
+    videoTitle TEXT NOT NULL,
+    resumeTime INTEGER DEFAULT 0 CHECK(resumeTime >= 0),
     isWatched INTEGER DEFAULT 0 CHECK(isWatched IN (0, 1)),
 
     -- Prevent duplicates: Cannot have same video path twice in one playlist

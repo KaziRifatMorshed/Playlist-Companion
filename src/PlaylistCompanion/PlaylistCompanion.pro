@@ -18,6 +18,7 @@ SOURCES += \
 HEADERS += \
     addnewplaylistwindow.h \
     include/db_sqlite.h \
+    include/structures.h \
     mainwindow.h \
     settings.h
 

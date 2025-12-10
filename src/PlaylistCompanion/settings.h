@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include <include/db_sqlite.h>
+#include <QVector>
 
 namespace Ui {
 class Settings;
@@ -23,6 +24,7 @@ private slots:
 private:
   Ui::Settings *ui;
   SQliteDB *dbInstance;
+
   void updatePlayerList(Ui::Settings *ui);
 };
 

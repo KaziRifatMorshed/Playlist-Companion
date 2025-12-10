@@ -2,10 +2,11 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <settings.h>
+#include <QVector>
 #include <addnewplaylistwindow.h>
 #include <include/db_sqlite.h>
-#include <QVector>
+#include <include/structures.h>
+#include <settings.h>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -13,36 +14,40 @@ class MainWindow;
 }
 QT_END_NAMESPACE
 
-class MainWindow : public QMainWindow
-{
-    Q_OBJECT
+class MainWindow : public QMainWindow {
+  Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent = nullptr);
-    ~MainWindow();
+  MainWindow(QWidget *parent = nullptr);
+  ~MainWindow();
 
 private slots:
-    void on_pushButton_3_clicked();
-
-    void on_editPlaylistButton_clicked();
-
-    void on_createNewPlaylist_clicked();
+  void on_pushButton_3_clicked();
+  void on_editPlaylistButton_clicked();
+  void on_createNewPlaylist_clicked();
+  void on_playlistList_currentIndexChanged(
+      int index); // Slot to handle when user selects a different playlist from
+                  // the combo box
 
 private:
-private:
-    Ui::MainWindow *ui;
-    SQliteDB *dbInstance;
-    Settings *settingsWidgt;
-    AddNewPlaylistWindow *playlistWindow;
-    QVector<QString> listOfPlaylists;
+  Ui::MainWindow *ui;
+  SQliteDB *dbInstance;
+  Settings *settingsWidgt;
+  AddNewPlaylistWindow *playlistWindow;
+  QVector<Playlist> listOfPlaylists;
 
-    // --- New Variables for General Settings ---
-    QString defaultMediaPlayer;
-    int lastWatchedPlId = -1; // -1 or 0 indicates no playlist selected
-    int lastWatchedVdoId = -1;
-    QString currentOS;
+  // --- New Variables for General Settings ---
+  QString defaultMediaPlayer;
+  int lastWatchedPlId = -1; // -1 or 0 indicates no playlist selected
+  int lastWatchedVdoId = -1;
+  QString currentOS;
+  // (e.g., when clicking a row)
+  QVector<Video> currentVideoList; // Store videos in memory for easy access
 
-    // --- Helper Function ---
-    void initGeneralSettings();
+  // --- Helper Function ---
+  void initGeneralSettings();
+  void updatePlaylistListCombo();
+  void populateVideoTable(
+      int playlistId); // Helper function to load videos for a specific playlist
 };
 #endif // MAINWINDOW_H

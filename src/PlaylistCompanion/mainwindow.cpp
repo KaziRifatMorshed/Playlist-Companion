@@ -2,12 +2,16 @@
 #include "ui_mainwindow.h"
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QFileInfo>
+#include <QDebug>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindow) {
   ui->setupUi(this);
   MainWindow::dbInstance = SQliteDB::instance();
   initGeneralSettings();
+  MainWindow::updatePlaylistListCombo();
+  MainWindow::populateVideoTable(MainWindow::lastWatchedPlId);
 }
 
 MainWindow::~MainWindow() { delete ui; }
@@ -100,4 +104,126 @@ void MainWindow::initGeneralSettings() {
     MainWindow::on_pushButton_3_clicked();
   }
 
+}
+
+void MainWindow::updatePlaylistListCombo() {
+    QComboBox* combo = ui->playlistList;
+
+    // 2. Clear previous data to avoid duplicates
+    listOfPlaylists.clear();
+    combo->clear();
+
+    // 3. Execute Query to fetch all playlists
+    // We select all columns to populate the full struct
+    QString q = "SELECT * FROM Playlist ORDER BY playlistId ASC";
+    QSqlQuery query = dbInstance->execQuery(q);
+
+    // 4. Iterate through results
+    while (query.next()) {
+        Playlist pl;
+
+        // --- MAP DB COLUMNS TO STRUCT ---
+        // (Ensure these variable names match your structures.h definition)
+        pl.playlistId = query.value("playlistId").toInt();
+        pl.playlistTitle = query.value("playlistTitle").toString();
+        pl.playlistPath = query.value("playlistPath").toString();
+        pl.status = query.value("status").toString();
+
+        pl.totalVideoCount = query.value("totalVideoCount").toInt();
+        pl.watchedCount = query.value("watchedCount").toInt();
+        pl.totalTimeHour = query.value("totalTimeHour").toInt();
+
+        // Retrieve Dates
+        pl.creationDateTime = query.value("creationDateTime").toString();
+        pl.lastWatchedDateTime = query.value("lastWatchedDateTime").toString();
+        // -------------------------------
+
+        // 5. Add to the member vector
+        listOfPlaylists.append(pl);
+
+        // 6. Add to the UI ComboBox
+        // Argument 1: Text to display (Title)
+        // Argument 2: UserData (The ID, hidden) - useful for retrieving the specific playlist later
+        combo->addItem(pl.playlistTitle, pl.playlistId);
+    }
+
+    // 7. (Optional) Auto-select the last watched playlist
+    // 'lastWatchedPlId' was loaded in initGeneralSettings()
+    if (lastWatchedPlId != -1) {
+        int index = combo->findData(lastWatchedPlId);
+        if (index != -1) {
+            combo->setCurrentIndex(index);
+        }
+    }
+
+    qDebug() << "[MainWindow] Playlist combo refreshed. Count:" << listOfPlaylists.size();
+}
+
+void MainWindow::populateVideoTable(int playlistId) {
+    // 1. Clear existing data
+    currentVideoList.clear();
+    ui->allVideosTableWidget->setRowCount(0);
+
+    // 2. Setup Table Headers (if not done in UI designer)
+    // Column 0: Watched Status, Column 1: Video Name
+    ui->allVideosTableWidget->setColumnCount(2);
+    ui->allVideosTableWidget->setHorizontalHeaderLabels(QStringList() << "Watched" << "Video Name");
+
+    // Adjust column widths (Status column small, Name column stretches)
+    ui->allVideosTableWidget->setColumnWidth(0, 80);
+    ui->allVideosTableWidget->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
+
+    // 3. Prepare Query
+    // We fetch videos only for the selected playlist
+    QString q = QString("SELECT * FROM Video WHERE playlistID = %1 ORDER BY videoPath ASC").arg(playlistId);
+    QSqlQuery query = dbInstance->execQuery(q);
+
+    int row = 0;
+    while (query.next()) {
+        Video vdo;
+        vdo.videoID = query.value("videoID").toInt();
+        vdo.playlistID = query.value("playlistID").toInt();
+        vdo.videoPath = query.value("videoPath").toString();
+        vdo.isWatched = query.value("isWatched").toInt();
+
+        // Add to local memory vector
+        currentVideoList.append(vdo);
+
+        // --- UI POPULATION ---
+        ui->allVideosTableWidget->insertRow(row);
+
+        // Col 0: Watched Status (Checkbox)
+        QTableWidgetItem *statusItem = new QTableWidgetItem();
+        statusItem->setFlags(Qt::ItemIsUserCheckable | Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+        // BUG: user checkbox e check kore data change kortese but database e save hocche na
+        statusItem->setCheckState(vdo.isWatched ? Qt::Checked : Qt::Unchecked); // Set Checkbox state based on DB value
+        statusItem->setData(Qt::UserRole, vdo.videoID); // Store the videoID in the item so we can identify it later if clicked
+
+        ui->allVideosTableWidget->setItem(row, 0, statusItem);
+
+        // Col 1: Video Name (Clean display)
+        QFileInfo fileInfo(vdo.videoPath);
+        QTableWidgetItem *nameItem = new QTableWidgetItem(fileInfo.fileName());
+        // Make it read-only (user can't rename file here)
+        nameItem->setFlags(nameItem->flags() ^ Qt::ItemIsEditable);
+
+        ui->allVideosTableWidget->setItem(row, 1, nameItem);
+
+        row++;
+    }
+}
+
+void MainWindow::on_playlistList_currentIndexChanged(int index) {
+    // Get the UserData (Playlist ID) we stored earlier in updatePlaylistListCombo
+    int playlistId = ui->playlistList->currentData().toInt(); // kmne kaj korlo !!!!
+
+    if (playlistId > 0) { // -1 or 0 usually indicates invalid ID or "Select Playlist..." placeholder
+        populateVideoTable(playlistId);
+        lastWatchedPlId = playlistId; // Update the global tracker
+
+        // Update 'General' table in DB so app remembers this selection next time
+        QString q = QString("UPDATE General SET lastWatchedPlId = %1 WHERE id = 1").arg(playlistId);
+        dbInstance->execQuery(q);
+    }
+    // MainWindow::updatePlaylistListCombo(); // BUG : main window dows not launch
 }

@@ -137,6 +137,7 @@ void AddNewPlaylistWindow::on_pushButton_2_clicked() { // SAVE TO DB
 
         for (const QString &videoPath : vdos.fileList) {
             QString safeVideoPath = videoPath;
+            qDebug() << safeVideoPath;
             safeVideoPath.replace("'", "''");
 
             QString videoSql = QString("INSERT INTO Video (playlistID, videoPath) VALUES (%1, '%2');")
