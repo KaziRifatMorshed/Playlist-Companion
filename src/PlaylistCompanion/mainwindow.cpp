@@ -494,10 +494,10 @@ void MainWindow::playThisVdo(int videoId) {
   // For VLC, it might be something like: arguments << "--start-time" <<
   // QString::number(targetVideo.resumeTime);
 
-  QProcess *process = new QProcess(this);
-  process->start(program, arguments);
-  if (!process->waitForStarted()) {
-    QMessageBox::critical(this, "Player Launch Error",
+      QProcess *process = new QProcess(this);
+      process->setProcessChannelMode(QProcess::SeparateChannels); // Suppress output from the media player
+      process->start(program, arguments);
+      if (!process->waitForStarted()) {    QMessageBox::critical(this, "Player Launch Error",
                           "Could not start media player: " + program);
     qDebug() << "Failed to start media player:" << process->errorString();
   } else {
