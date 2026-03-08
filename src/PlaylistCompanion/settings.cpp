@@ -302,7 +302,7 @@ Settings::Settings(QWidget *parent) : QWidget(parent), ui(new Ui::Settings) {
   ui->setupUi(this);
   dbInstance = SQliteDB::instance();
   ui->appPath->setText(QCoreApplication::applicationFilePath());
-  ui->version->setText("0.1");
+  ui->version->setText("v1.0");
 
   // Call the updated function
   updatePlayerList(ui);
