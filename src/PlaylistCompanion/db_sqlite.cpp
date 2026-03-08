@@ -67,6 +67,21 @@ bool SQliteDB::openDB(const QString &dbPath) {
         return false;
     }
 
+    // Check if the database is newly created (no tables)
+    QStringList tables = db.tables();
+    if (tables.isEmpty()) {
+        dbdebug << "Database is empty, initializing schema...";
+        QStringList schemaStatements = getInitialSchemaStatements();
+        for (const QString &statement : schemaStatements) {
+            QSqlQuery query(db);
+            if (!query.exec(statement)) {
+                qCritical() << "[sqLiteDB] Schema initialization failed for statement:" << statement
+                            << "; Error:" << query.lastError().text();
+            }
+        }
+        dbdebug << "Schema initialized successfully.";
+    }
+
     return true;
 }
 
