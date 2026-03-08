@@ -19,7 +19,7 @@ MainWindow::MainWindow(QWidget *parent)
   // loaded playlist
   currentPlayingVideoId = lastWatchedVdoId;
 
-  // The on_allVideosTableWidget_cellDoubleClicked slot is auto-connected by the
+  // The on_allVideosTableWidget_cellClicked slot is auto-connected by the
   // uic. A manual connect call is not needed and would cause the slot to fire
   // twice.
 
@@ -552,8 +552,8 @@ QString MainWindow::currentVideoTitle() {
   return "No Video Playing";
 }
 
-void MainWindow::on_allVideosTableWidget_cellDoubleClicked(int row,
-                                                           int column) {
+void MainWindow::on_allVideosTableWidget_cellClicked(int row,
+                                                            int column) {
   // Get the video ID from the clicked row (stored in the first column's item
   // data)
   QTableWidgetItem *item = ui->allVideosTableWidget->item(row, 0);

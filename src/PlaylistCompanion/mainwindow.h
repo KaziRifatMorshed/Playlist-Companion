@@ -33,7 +33,7 @@ private slots:
     void on_playlistList_currentIndexChanged(
         int index); // Slot to handle when user selects a different playlist from
                     // the combo box
-    void on_allVideosTableWidget_cellDoubleClicked(int row, int column);
+    void on_allVideosTableWidget_cellClicked(int row, int column);
     void playThisVdo_clicked();
     void showNextVideo_clicked();
     void showPrevVideo_clicked();
