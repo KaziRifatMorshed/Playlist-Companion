@@ -48,14 +48,15 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow() { delete ui; }
 
-void MainWindow::on_pushButton_3_clicked() {
-  settingsWidgt = new Settings();
-  // 2. Set Modality: This disables the MainWindow while Settings is open
-  settingsWidgt->setWindowModality(Qt::ApplicationModal);
-  // 3. (Optional) Make sure it deletes itself from memory when closed
-  // preventing memory leaks since you use 'new' every time.
-  settingsWidgt->setAttribute(Qt::WA_DeleteOnClose);
-  settingsWidgt->show();
+void MainWindow::on_pushButton_3_clicked() // settings
+{
+    settingsWidgt = new Settings();
+    // 2. Set Modality: This disables the MainWindow while Settings is open
+    settingsWidgt->setWindowModality(Qt::ApplicationModal);
+    // 3. (Optional) Make sure it deletes itself from memory when closed
+    // preventing memory leaks since you use 'new' every time.
+    settingsWidgt->setAttribute(Qt::WA_DeleteOnClose);
+    settingsWidgt->show();
 }
 
 void MainWindow::on_editPlaylistButton_clicked() {
@@ -145,9 +146,6 @@ void MainWindow::initGeneralSettings() {
     lastWatchedPlId = query.value("lastWatchedPlId").toInt();
     lastWatchedVdoId = query.value("lastWatchedVdoId").toInt();
 
-    qDebug() << "[MainWindow] Settings Loaded: " << defaultMediaPlayer
-             << " | Last Playlist ID:" << lastWatchedPlId;
-
   } else {
     // --- TABLE EMPTY: Insert default row ---
     // The table has a constraint CHECK(id = 1), so we explicitly set id=1.
@@ -222,9 +220,6 @@ void MainWindow::updatePlaylistListCombo() {
       combo->setCurrentIndex(index);
     }
   }
-
-  qDebug() << "[MainWindow] Playlist combo refreshed. Count:"
-           << listOfPlaylists.size();
 }
 
 void MainWindow::populateVideoTable(int playlistId) {
@@ -235,13 +230,11 @@ void MainWindow::populateVideoTable(int playlistId) {
   // 2. Setup Table Headers (if not done in UI designer)
   // Column 0: Watched Status, Column 1: Video Name
   ui->allVideosTableWidget->setColumnCount(2);
-  ui->allVideosTableWidget->setHorizontalHeaderLabels(
-      QStringList() << "Watched" << "Video Name");
+  ui->allVideosTableWidget->setHorizontalHeaderLabels(QStringList() << "Watched?" << "Video Name");
 
   // Adjust column widths (Status column small, Name column stretches)
-  ui->allVideosTableWidget->setColumnWidth(0, 80);
-  ui->allVideosTableWidget->horizontalHeader()->setSectionResizeMode(
-      1, QHeaderView::Stretch);
+  ui->allVideosTableWidget->setColumnWidth(0, 60);
+  ui->allVideosTableWidget->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
 
   // 3. Prepare Query
   // We fetch videos only for the selected playlist
@@ -384,13 +377,14 @@ void MainWindow::on_playlistList_currentIndexChanged(int index) {
 }
 
 // --- Video Playback & Navigation ---
-int MainWindow::currentVideoNumberInPlaylist() {
-  for (int i = 0; i < currentVideoList.size(); ++i) {
-    if (currentVideoList[i].videoID == currentPlayingVideoId) {
-      return i;
+int MainWindow::currentVideoNumberInPlaylist()
+{ // inefficient
+    for (int i = 0; i < currentVideoList.size(); ++i) {
+        if (currentVideoList[i].videoID == currentPlayingVideoId) {
+            return i;
+        }
     }
-  }
-  return -1; // Not found
+    return -1; // Not found
 }
 
 void MainWindow::watchedThisVdo(int videoId) {

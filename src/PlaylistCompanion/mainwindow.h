@@ -26,20 +26,20 @@ public:
   ~MainWindow();
 
 private slots:
-  void on_pushButton_3_clicked();
-  void on_editPlaylistButton_clicked();
-  void on_createNewPlaylist_clicked();
-  void on_removePlaylist_clicked();
-  void on_playlistList_currentIndexChanged(
-      int index); // Slot to handle when user selects a different playlist from
-                  // the combo box
-  void on_allVideosTableWidget_cellDoubleClicked(int row, int column);
-  void playThisVdo_clicked();
-  void showNextVideo_clicked();
-  void showPrevVideo_clicked();
-  void vdoNotWatched_clicked();
-  void watchedThisVdo_clicked();
-  void onFrameChanged(const QVideoFrame &frame);
+    void on_pushButton_3_clicked(); // settings
+    void on_editPlaylistButton_clicked();
+    void on_createNewPlaylist_clicked();
+    void on_removePlaylist_clicked();
+    void on_playlistList_currentIndexChanged(
+        int index); // Slot to handle when user selects a different playlist from
+                    // the combo box
+    void on_allVideosTableWidget_cellDoubleClicked(int row, int column);
+    void playThisVdo_clicked();
+    void showNextVideo_clicked();
+    void showPrevVideo_clicked();
+    void vdoNotWatched_clicked();
+    void watchedThisVdo_clicked();
+    void onFrameChanged(const QVideoFrame &frame);
 
 
 private:
