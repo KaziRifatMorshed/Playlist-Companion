@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include <QDebug>
+#include <QDir>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QMessageBox>
@@ -513,9 +514,9 @@ void MainWindow::playThisVdo(int videoId) {
   dbInstance->execQuery(updateGeneralQuery);
 
   // 5. Launch the video using QProcess
-  QString program = defaultMediaPlayer;
+  QString program = QDir::toNativeSeparators(defaultMediaPlayer);
   QStringList arguments;
-  arguments << targetVideo.videoPath;
+  arguments << QDir::toNativeSeparators(targetVideo.videoPath);
 
   // TODO: Add support for resumeTime if the media player supports it
   // For VLC, it might be something like: arguments << "--start-time" <<
