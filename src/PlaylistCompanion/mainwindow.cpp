@@ -315,8 +315,9 @@ void MainWindow::populateVideoTable(int playlistId) {
         QTableWidgetItem *itemToHighlight =
             ui->allVideosTableWidget->item(row, col);
         if (itemToHighlight) {
-          itemToHighlight->setBackground(
-              QColor(Qt::yellow).lighter(15)); // Light yellow
+          QColor highlightColor(Qt::yellow);
+          highlightColor.setAlpha(40); // 15% opacity
+          itemToHighlight->setBackground(highlightColor);
         }
       }
     }
