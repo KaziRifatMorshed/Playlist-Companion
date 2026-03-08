@@ -202,53 +202,61 @@ void MainWindow::initGeneralSettings() {
 void MainWindow::updatePlaylistListCombo() {
   QComboBox *combo = ui->playlistList;
 
+  // Store the currently selected playlist ID before clearing
+  int currentId = combo->currentData().toInt();
+  if (currentId <= 0) {
+      currentId = lastWatchedPlId;
+  }
+
+  // Block signals so that clearing/adding doesn't trigger on_playlistList_currentIndexChanged
+  combo->blockSignals(true);
+
   // 2. Clear previous data to avoid duplicates
   listOfPlaylists.clear();
   combo->clear();
 
   // 3. Execute Query to fetch all playlists
-  // We select all columns to populate the full struct
   QString q = "SELECT * FROM Playlist ORDER BY playlistId ASC";
   QSqlQuery query = dbInstance->execQuery(q);
 
   // 4. Iterate through results
   while (query.next()) {
     Playlist pl;
-
-    // --- MAP DB COLUMNS TO STRUCT ---
-    // (Ensure these variable names match your structures.h definition)
     pl.playlistId = query.value("playlistId").toInt();
     pl.playlistTitle = query.value("playlistTitle").toString();
     pl.playlistPath = query.value("playlistPath").toString();
     pl.status = query.value("status").toString();
-
     pl.totalVideoCount = query.value("totalVideoCount").toInt();
     pl.watchedCount = query.value("watchedCount").toInt();
     pl.totalTimeHour = query.value("totalTimeHour").toInt();
-
-    // Retrieve Dates
     pl.creationDateTime = query.value("creationDateTime").toString();
     pl.lastWatchedDateTime = query.value("lastWatchedDateTime").toString();
-    // -------------------------------
 
-    // 5. Add to the member vector
     listOfPlaylists.append(pl);
-
-    // 6. Add to the UI ComboBox
-    // Argument 1: Text to display (Title)
-    // Argument 2: UserData (The ID, hidden) - useful for retrieving the
-    // specific playlist later
     combo->addItem(pl.playlistTitle, pl.playlistId);
   }
 
-  // 7. (Optional) Auto-select the last watched playlist
-  // 'lastWatchedPlId' was loaded in initGeneralSettings()
-  if (lastWatchedPlId != -1) {
-    int index = combo->findData(lastWatchedPlId);
-    if (index != -1) {
-      combo->setCurrentIndex(index);
-    }
+  // Restore the previous selection or auto-select the last watched playlist
+  int indexToSelect = -1;
+  if (currentId > 0) {
+      indexToSelect = combo->findData(currentId);
   }
+  
+  if (indexToSelect == -1 && lastWatchedPlId != -1) {
+      indexToSelect = combo->findData(lastWatchedPlId);
+  }
+
+  if (indexToSelect != -1) {
+      combo->setCurrentIndex(indexToSelect);
+  } else if (combo->count() > 0) {
+      combo->setCurrentIndex(0);
+  }
+
+  // Manually trigger UI refresh because signals were blocked
+  on_playlistList_currentIndexChanged(combo->currentIndex());
+
+  // Unblock signals
+  combo->blockSignals(false);
 }
 
 void MainWindow::populateVideoTable(int playlistId) {
