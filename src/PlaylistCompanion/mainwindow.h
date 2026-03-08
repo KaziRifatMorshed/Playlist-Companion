@@ -64,7 +64,7 @@ private:
       int playlistId); // Helper function to load videos for a specific playlist
   int currentVideoNumberInPlaylist(); // Returns the 0-based index of the current video
   void playThisVdo(int videoId); // Launches the video player for the given video ID
-  void showNextVideo();         // Plays the next video in the playlist
+  void showNextVideo(int startFromId = -1);         // Plays the next video in the playlist
   void showPrevVideo();         // Plays the previous video in the playlist
   void vdoNotWatched(int videoId); // Marks a video as unwatched
   void watchedThisVdo(int videoId); // Marks a video as watched

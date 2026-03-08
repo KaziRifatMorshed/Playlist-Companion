@@ -403,7 +403,7 @@ void MainWindow::watchedThisVdo(int videoId) {
   }
   if (found && currentVideo.isWatched) {
     // If already watched, just move to the next video's info
-    showNextVideo();
+    showNextVideo(videoId);
     return;
   }
 
@@ -425,7 +425,7 @@ void MainWindow::watchedThisVdo(int videoId) {
   }
 
   // --- Advance to Next Video ---
-  showNextVideo();
+  showNextVideo(videoId);
 }
 
 void MainWindow::vdoNotWatched(int videoId) {
@@ -503,8 +503,16 @@ void MainWindow::playThisVdo(int videoId) {
   }
 }
 
-void MainWindow::showNextVideo() {
-  int currentIdx = currentVideoNumberInPlaylist();
+void MainWindow::showNextVideo(int startFromId) {
+  int targetId = (startFromId != -1) ? startFromId : currentPlayingVideoId;
+  int currentIdx = -1;
+  for (int i = 0; i < currentVideoList.size(); ++i) {
+      if (currentVideoList[i].videoID == targetId) {
+          currentIdx = i;
+          break;
+      }
+  }
+
   if (currentIdx != -1 && currentIdx < currentVideoList.size() - 1) {
     currentPlayingVideoId = currentVideoList[currentIdx + 1].videoID;
     updateVideoGroupBox(currentPlayingVideoId);
@@ -513,7 +521,7 @@ void MainWindow::showNextVideo() {
     QMessageBox::information(this, "End of Playlist",
                              "This is the last video in the playlist.");
   } else {
-    // If no video is playing, select the first one
+    // If no video is playing or found, select the first one
     if (!currentVideoList.isEmpty()) {
       currentPlayingVideoId = currentVideoList[0].videoID;
       updateVideoGroupBox(currentPlayingVideoId);
