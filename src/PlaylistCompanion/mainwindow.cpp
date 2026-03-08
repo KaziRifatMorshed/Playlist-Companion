@@ -452,9 +452,12 @@ void MainWindow::watchedThisVdo(int videoId) {
             .arg(QDateTime::currentDateTime().toString(Qt::ISODate))
             .arg(currentPlaylistId);
     dbInstance->execQuery(updatePlaylistQuery);
+
+    // Update status
+    updatePlaylistStatus(currentPlaylistId);
+
     updatePlaylistListCombo(); // Refresh playlist combo to update counts
   }
-
   // --- Advance to Next Video ---
   showNextVideo(videoId);
 }
@@ -472,10 +475,13 @@ void MainWindow::vdoNotWatched(int videoId) {
                 "playlistId = %1")
             .arg(currentPlaylistId);
     dbInstance->execQuery(updatePlaylistQuery);
+
+    // Update status
+    updatePlaylistStatus(currentPlaylistId);
+
     updatePlaylistListCombo(); // Refresh playlist combo to update counts
     populateVideoTable(currentPlaylistId); // Refresh video table
-  }
-}
+  }}
 
 void MainWindow::playThisVdo(int videoId) {
   // 1. Find the video in the currentVideoList
@@ -613,6 +619,31 @@ void MainWindow::on_allVideosTableWidget_cellClicked(int row,
   }
 }
 
+void MainWindow::updatePlaylistStatus(int playlistId) {
+    if (playlistId <= 0) return;
+
+    QString q = QString("SELECT watchedCount, totalVideoCount FROM Playlist WHERE playlistId = %1").arg(playlistId);
+    QSqlQuery query = dbInstance->execQuery(q);
+    if (query.next()) {
+        int watched = query.value(0).toInt();
+        int total = query.value(1).toInt();
+        QString status = "Planned to Watch";
+
+        if (watched > 0) {
+            if (watched >= total && total > 0) {
+                status = "Completed";
+            } else {
+                status = "Watching";
+            }
+        }
+
+        QString updateQ = QString("UPDATE Playlist SET status = '%1' WHERE playlistId = %2")
+                .arg(status)
+                .arg(playlistId);
+        dbInstance->execQuery(updateQ);
+    }
+}
+
 void MainWindow::on_allVideosTableWidget_cellChanged(int row, int column) {
   if (isPopulatingTable || column != 0) {
     return;
@@ -648,6 +679,9 @@ void MainWindow::on_allVideosTableWidget_cellChanged(int row, int column) {
               .arg(currentPlaylistId);
     }
     dbInstance->execQuery(updatePlaylistQuery);
+
+    // 2.1 Update Playlist status
+    updatePlaylistStatus(currentPlaylistId);
 
     // 3. Refresh UI (Playlist counts, progress bar, etc.)
     updatePlaylistListCombo(); // This updates the combo box and global variables

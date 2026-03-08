@@ -70,6 +70,7 @@ private:
   void showPrevVideo();         // Plays the previous video in the playlist
   void vdoNotWatched(int videoId); // Marks a video as unwatched
   void watchedThisVdo(int videoId); // Marks a video as watched
+  void updatePlaylistStatus(int playlistId); // Updates status based on watchedCount
   QString currentVideoTitle();      // Returns the title of the current video
   void updateVideoGroupBox(int videoId); // Updates the video group box UI
 
