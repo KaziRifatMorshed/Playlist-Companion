@@ -15,6 +15,7 @@
 #include <QtSql/QSqlDatabase>
 #include <QtSql/QSqlError>
 #include <QtSql/QSqlQuery>
+#include "db_schema.h"
 
 #define dbdebug qDebug() << "[sqLiteDB] "
 #define dbcritical qCritical() << "[sqLiteDB][CRITICAL] "

@@ -49,10 +49,12 @@ bool SQliteDB::openDB(const QString &dbPath) {
     if (db.isOpen())
         return true;
 
-    dbdebug << "opening db... (" << dbPath << ")";
+    // Check if file exists just for logging/debugging
+    if (!QFile::exists(dbPath)) {
+        dbdebug << "Database file not found. A new one will be created at:" << dbPath;
+    }
 
-    // QList listOfDrivers = QSqlDatabase::drivers();
-    // qDebug() << listOfDrivers;
+    dbdebug << "opening db... (" << dbPath << ")";
 
     const QString connectionName = "db_connection";
     if (QSqlDatabase::contains(connectionName)) {
@@ -65,6 +67,32 @@ bool SQliteDB::openDB(const QString &dbPath) {
     if (!db.open()) {
         qCritical() << "[sqLiteDB] Failed to open DB: " << db.lastError().text();
         return false;
+    }
+
+    // ALWAYS enable foreign keys when opening a connection in SQLite
+    {
+        QSqlQuery pragma(db);
+        if (!pragma.exec("PRAGMA foreign_keys = ON;")) {
+            qWarning() << "[sqLiteDB] Failed to enable foreign keys:" << pragma.lastError().text();
+        }
+    }
+
+    // Check if the database is newly created (no tables)
+    // Qt's tables() returns an empty list if the database has no user tables.
+    if (db.tables().isEmpty()) {
+        dbdebug << "Database is empty, initializing schema from db_schema.h...";
+        QStringList schemaStatements = getInitialSchemaStatements();
+        for (const QString &statement : schemaStatements) {
+            // Skip the PRAGMA if it's already been run, though running it again is harmless
+            if (statement.trimmed().startsWith("PRAGMA", Qt::CaseInsensitive)) continue;
+
+            QSqlQuery query(db);
+            if (!query.exec(statement)) {
+                qCritical() << "[sqLiteDB] Schema initialization failed for statement:" << statement
+                            << "; Error:" << query.lastError().text();
+            }
+        }
+        dbdebug << "Schema initialized successfully.";
     }
 
     return true;
