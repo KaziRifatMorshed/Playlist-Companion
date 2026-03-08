@@ -18,7 +18,7 @@
 // --- Global Data ---
 
 std::vector<std::pair<QString, QString>> mediaPlayerEntries = {
-    // NOTE: Windows paths must use double backslashes (\\) or forward slashes
+    // NOTE: Windows paths must use double backslashes (/) or forward slashes
     // (/) for proper string escaping.
 
     {"VLC",
@@ -26,8 +26,8 @@ std::vector<std::pair<QString, QString>> mediaPlayerEntries = {
      // Common default path for VLC executable on many Linux distros
      "/usr/bin/vlc"
 #elif _WIN32
-// Default path for 64-bit VLC. Note the use of \\
-        "C:\\Program Files\\VideoLAN\\VLC\\vlc.exe"
+// Default path for 64-bit VLC. Note the use of /
+        "C:/Program Files/VideoLAN/VLC/vlc.exe"
 #endif
     },
     {"MPV",
@@ -36,7 +36,7 @@ std::vector<std::pair<QString, QString>> mediaPlayerEntries = {
      "/usr/bin/mpv"
 #elif _WIN32
         // General path, often within a subfolder or C:\Program Files\mpv\mpv.exe
-        "C:\\Program Files\\mpv\\mpv.exe"
+        "C:/Program Files/mpv/mpv.exe"
 #endif
     },
     {"Windows Media Player (WMP)",
@@ -45,14 +45,14 @@ std::vector<std::pair<QString, QString>> mediaPlayerEntries = {
      ""
 #elif _WIN32
         // The executable is typically in the Windows system directory
-        "C:\\Program Files\\Windows Media Player\\wmplayer.exe"
+        "C:/Program Files/Windows Media Player/wmplayer.exe"
 #endif
     },
     {"PotPlayer",
 #ifdef __linux__
      ""
 #elif _WIN32
-        "C:\\Program Files\\DAUM\\PotPlayer\\PotPlayer.exe"
+        "C:/Program Files/DAUM/PotPlayer/PotPlayer.exe"
 #endif
     },
     // The rest of the entries are left with placeholder paths for brevity,
@@ -61,35 +61,35 @@ std::vector<std::pair<QString, QString>> mediaPlayerEntries = {
 #ifdef __linux__
      ""
 #elif _WIN32
-        "C:\\Program Files\\KMPlayer\\"
+        "C:/Program Files/KMPlayer/"
 #endif
     },
     {"MPlayer",
 #ifdef __linux__
      "/usr/bin/mplayer"
 #elif _WIN32
-        "C:\\Program Files\\MPlayer\\"
+        "C:/Program Files/MPlayer/"
 #endif
     },
     {"SM Player",
 #ifdef __linux__
      "/usr/bin/smplayer"
 #elif _WIN32
-        "C:\\Program Files\\SMPlayer\\"
+        "C:/Program Files/SMPlayer/"
 #endif
     },
     {"Media Player Classic",
 #ifdef __linux__
      ""
 #elif _WIN32
-        "C:\\Program Files\\MPC-HC\\"
+        "C:/Program Files/MPC-HC/"
 #endif
     },
     {"GOM Player",
 #ifdef __linux__
      ""
 #elif _WIN32
-        "C:\\Program Files\\GRETECH\\GOM Player\\"
+        "C:/Program Files/GRETECH/GOM Player/"
 #endif
     },
     {"GNOME Videos",
