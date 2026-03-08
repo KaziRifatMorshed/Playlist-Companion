@@ -22,6 +22,7 @@ struct Video {
     QString videoTitle;
     int isWatched; // 0 for false, 1 for true
     int resumeTime;
+    int duration;
 };
 
 #endif // STRUCTURES_H

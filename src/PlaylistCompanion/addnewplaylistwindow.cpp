@@ -19,6 +19,30 @@ AddNewPlaylistWindow::AddNewPlaylistWindow(QWidget *parent, int plListId,
   dbInstance = SQliteDB::instance();
   ui->folderPath->setText(plpath);
 
+  m_measurePlayer = new QMediaPlayer(this);
+  m_currentIndex = 0;
+  m_totalDurationMs = 0;
+
+  // Use mediaStatusChanged to detect when media is loaded or failed
+  connect(m_measurePlayer, &QMediaPlayer::mediaStatusChanged, this, [this](QMediaPlayer::MediaStatus status) {
+      if (status == QMediaPlayer::LoadedMedia) {
+          qint64 duration = m_measurePlayer->duration();
+          if (duration > 0) {
+              m_totalDurationMs += duration;
+              if (m_currentIndex < vdos.fileList.size()) {
+                  vdos.fileDurations.insert(vdos.fileList[m_currentIndex], (int)(duration / 1000));
+              }
+          }
+          // Move to next video
+          m_currentIndex++;
+          processNextVideo();
+      } else if (status == QMediaPlayer::InvalidMedia) {
+          qWarning() << "Failed to load media for duration calculation:" << vdos.fileList.value(m_currentIndex);
+          m_currentIndex++;
+          processNextVideo();
+      }
+  });
+
   /* ---- CASE 1 : new playlist ---- */
   if (playlistID == -1) {
 
@@ -35,6 +59,8 @@ AddNewPlaylistWindow::AddNewPlaylistWindow(QWidget *parent, int plListId,
 
     ui->playlistCreationDate->setText(
         QDateTime::currentDateTime().toString("yyyy-MM-dd") + " (yyyy-MM-dd)");
+
+    startDurationCalculation();
 
     /* ---- CASE 2 : edit existing playlist ---- */
   } else if (playlistID >= 0) {
@@ -67,6 +93,25 @@ AddNewPlaylistWindow::AddNewPlaylistWindow(QWidget *parent, int plListId,
 }
 
 AddNewPlaylistWindow::~AddNewPlaylistWindow() { delete ui; }
+
+void AddNewPlaylistWindow::startDurationCalculation() {
+    m_currentIndex = 0;
+    m_totalDurationMs = 0;
+    if (!vdos.fileList.isEmpty()) {
+        m_measurePlayer->setSource(QUrl::fromLocalFile(vdos.fileList[m_currentIndex]));
+    }
+}
+
+void AddNewPlaylistWindow::processNextVideo() {
+    if (m_currentIndex < vdos.fileList.size()) {
+        m_measurePlayer->setSource(QUrl::fromLocalFile(vdos.fileList[m_currentIndex]));
+    } else {
+        // All done
+        int totalHours = qRound(m_totalDurationMs / 3600000.0);
+        ui->totalHourWatched->setText(QString::number(totalHours));
+        printdebug << "Total duration calculation finished:" << totalHours << "hours";
+    }
+}
 
 void AddNewPlaylistWindow::on_pushButton_2_clicked() { // SAVE TO DB
   printdebug << "Started saving to DB";
@@ -147,12 +192,15 @@ void AddNewPlaylistWindow::on_pushButton_2_clicked() { // SAVE TO DB
 
         safeVideoPath.replace("'", "''");
 
+        int duration = vdos.fileDurations.value(videoPath, 0);
+
         QString videoSql =
             QString(
-                "INSERT INTO Video (playlistID, videoPath, videoTitle) VALUES (%1, '%2', '%3');")
+                "INSERT INTO Video (playlistID, videoPath, videoTitle, duration) VALUES (%1, '%2', '%3', %4);")
                 .arg(newPlaylistID)
                 .arg(safeVideoPath)
-                .arg(safeVideoTitle);
+                .arg(safeVideoTitle)
+                .arg(duration);
         dbInstance->execQuery(videoSql);
       }
 
@@ -228,7 +276,10 @@ VideoCollection AddNewPlaylistWindow::getAllVideosFromDB() {
 
   VideoCollection vdos;
   while (allVdosFromDb.next()) {
-    vdos.fileList.append(allVdosFromDb.value("videoPath").toString());
+    QString path = allVdosFromDb.value("videoPath").toString();
+    int duration = allVdosFromDb.value("duration").toInt();
+    vdos.fileList.append(path);
+    vdos.fileDurations.insert(path, duration);
   }
   vdos.count = vdos.fileList.size();
   return vdos;

@@ -8,11 +8,16 @@ namespace Ui {
 class AddNewPlaylistWindow;
 }
 
+#include <QMap>
+
 struct VideoCollection {
     QVector<QString> fileList; // Contains full absolute path + filename
+    QMap<QString, int> fileDurations; // Maps path to duration in seconds
     int count;
 };
 
+
+#include <QMediaPlayer>
 
 class AddNewPlaylistWindow : public QWidget
 {
@@ -24,6 +29,7 @@ public:
 
 private slots:
     void on_pushButton_2_clicked(); // save button
+    void processNextVideo();
 
 private:
     Ui::AddNewPlaylistWindow *ui;
@@ -31,8 +37,13 @@ private:
     VideoCollection vdos;
     int playlistID;
 
+    QMediaPlayer *m_measurePlayer;
+    int m_currentIndex;
+    qint64 m_totalDurationMs;
+
     VideoCollection getAllVideosFromDir(QString rootPath);
     VideoCollection getAllVideosFromDB();
+    void startDurationCalculation();
 };
 
 #endif // ADDNEWPLAYLISTWINDOW_H

@@ -525,7 +525,7 @@
          </sizepolicy>
         </property>
         <property name="text">
-         <string>Total Time:</string>
+         <string>Hours Time Watched:</string>
         </property>
        </widget>
       </item>

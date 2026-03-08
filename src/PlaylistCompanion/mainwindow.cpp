@@ -280,6 +280,7 @@ void MainWindow::populateVideoTable(int playlistId) {
     vdo.playlistID = query.value("playlistID").toInt();
     vdo.videoPath = query.value("videoPath").toString();
     vdo.isWatched = query.value("isWatched").toInt();
+    vdo.duration = query.value("duration").toInt();
 
     // Add to local memory vector
     currentVideoList.append(vdo);
@@ -377,8 +378,11 @@ void MainWindow::on_playlistList_currentIndexChanged(int index) {
     // Now update the UI elements
     ui->playlistCreationDate->setText(currentPlaylist.creationDateTime);
     ui->lastWatched->setText(currentPlaylist.lastWatchedDateTime);
-    ui->totalTime->setText(QString::number(currentPlaylist.totalTimeHour) +
-                           " hours");
+    
+    int remainingHours = sumRemainingTime(playlistId);
+    ui->totalTime->setText(QString("%1/%2 hours")
+                           .arg(remainingHours)
+                           .arg(currentPlaylist.totalTimeHour));
 
     // Progress bar and count
     if (currentPlaylist.totalVideoCount > 0) {
@@ -643,6 +647,16 @@ void MainWindow::updatePlaylistStatus(int playlistId) {
                 .arg(playlistId);
         dbInstance->execQuery(updateQ);
     }
+}
+
+int MainWindow::sumRemainingTime(int playlistId) {
+    if (playlistId <= 0) return 0;
+    QString q = QString("SELECT SUM(duration) FROM Video WHERE playlistID = %1 AND isWatched = 0").arg(playlistId);
+    QSqlQuery query = dbInstance->execQuery(q);
+    if (query.next()) {
+        return qRound(query.value(0).toLongLong() / 3600.0);
+    }
+    return 0;
 }
 
 void MainWindow::on_allVideosTableWidget_cellChanged(int row, int column) {
