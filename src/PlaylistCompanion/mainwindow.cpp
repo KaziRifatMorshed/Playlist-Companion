@@ -105,14 +105,39 @@ void MainWindow::on_removePlaylist_clicked() {
         "Are you sure you want to delete this playlist and all its videos?",
         QMessageBox::Yes | QMessageBox::No);
     if (reply == QMessageBox::Yes) {
-      // Delete videos associated with the playlist
+      // 1. Delete videos associated with the playlist
       dbInstance->execQuery(
           QString("DELETE FROM Video WHERE playlistID = %1").arg(playlistId));
-      // Delete the playlist itself
+      // 2. Delete the playlist itself
       dbInstance->execQuery(
           QString("DELETE FROM Playlist WHERE playlistId = %1")
               .arg(playlistId));
+
+      // 3. Update 'General' if this was the last watched playlist
+      if (playlistId == lastWatchedPlId) {
+          lastWatchedPlId = -1;
+          currentPlayingVideoId = -1;
+          dbInstance->execQuery("UPDATE General SET lastWatchedPlId = -1, lastWatchedVdoId = -1 WHERE id = 1");
+      }
+
+      // 4. Refresh UI
       updatePlaylistListCombo();
+
+      // If no playlists left, the combo's currentData will be invalid,
+      // which will trigger currentIndexChanged( -1 ) if it was cleared.
+      // But updatePlaylistListCombo might select another one.
+      // If count is 0, we must clear the table manually if signal doesn't.
+      if (ui->playlistList->count() == 0) {
+          currentVideoList.clear();
+          ui->allVideosTableWidget->setRowCount(0);
+          updateVideoGroupBox(-1);
+          // Clear labels
+          ui->playlistCreationDate->setText("");
+          ui->lastWatched->setText("");
+          ui->totalTime->setText("");
+          ui->progressBar->setValue(0);
+          ui->playlistProgressCount->setText("0/0");
+      }
     }
   } else {
     QMessageBox::warning(this, "No playlist selected",
@@ -371,7 +396,11 @@ void MainWindow::on_playlistList_currentIndexChanged(int index) {
                     .arg(playlistId);
     dbInstance->execQuery(q);
   } else {
-    // Clear the labels if no playlist is selected
+    // Clear everything if no playlist is selected
+    currentVideoList.clear();
+    ui->allVideosTableWidget->setRowCount(0);
+    updateVideoGroupBox(-1);
+
     ui->playlistCreationDate->setText("");
     ui->lastWatched->setText("");
     ui->totalTime->setText("");
