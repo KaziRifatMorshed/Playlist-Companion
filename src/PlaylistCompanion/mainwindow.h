@@ -74,6 +74,10 @@ private:
   int sumRemainingTime(int playlistId); // Sums duration of unwatched videos in hours
   QString currentVideoTitle();      // Returns the title of the current video
   void updateVideoGroupBox(int videoId); // Updates the video group box UI
+  void loadCurrentVideoNote(int videoId); // Loads the note for the current video
+  void saveCurrentVideoNote();           // Saves the note for the current video
+
+  bool eventFilter(QObject *obj, QEvent *event) override;
 
   QMediaPlayer *m_mediaPlayer;
   QVideoSink *m_videoSink;

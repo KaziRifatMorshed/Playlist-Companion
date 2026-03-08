@@ -12,6 +12,7 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindow) {
   ui->setupUi(this);
+  ui->currentVideoNote_textEdit->installEventFilter(this);
   MainWindow::dbInstance = SQliteDB::instance();
   initGeneralSettings();
   MainWindow::updatePlaylistListCombo();
@@ -388,6 +389,7 @@ void MainWindow::on_playlistList_currentIndexChanged(int index) {
     }
 
     populateVideoTable(playlistId);
+    updateVideoGroupBox(currentPlayingVideoId);
     lastWatchedPlId = playlistId; // Update the global tracker
 
     // Find the playlist in our list
@@ -753,6 +755,7 @@ void MainWindow::updateVideoGroupBox(int videoId) {
     if (videoId == -1) {
         ui->currentVideoTitle->setText("No Video Selected");
         ui->currentVideoNumberInPlaylist->setText("");
+        ui->currentVideoNote_textEdit->clear();
         return;
     }
 
@@ -777,7 +780,7 @@ void MainWindow::updateVideoGroupBox(int videoId) {
                                                    .arg(currentVideoList.size()));
         // Generate a new thumbnail
         generateThumbnail(currentVideo.videoPath);
-
+        loadCurrentVideoNote(videoId);
     } else {
         // If not in the current list, maybe it's just from initial load.
         // We can query the DB for the title.
@@ -790,9 +793,11 @@ void MainWindow::updateVideoGroupBox(int videoId) {
             ui->currentVideoNumberInPlaylist->setText(""); // Can't determine number without full list
             // Generate a new thumbnail
             generateThumbnail(videoPath);
+            loadCurrentVideoNote(videoId);
         } else {
             ui->currentVideoTitle->setText("Video not found");
             ui->currentVideoNumberInPlaylist->setText("");
+            ui->currentVideoNote_textEdit->clear();
         }
     }
 }
@@ -883,3 +888,63 @@ void MainWindow::watchedThisVdo_clicked() {
     QMessageBox::information(this, "No Video", "No video selected.");
   }
 }
+
+void MainWindow::loadCurrentVideoNote(int videoId) {
+    if (videoId <= 0) {
+        ui->currentVideoNote_textEdit->clear();
+        return;
+    }
+
+    QString queryStr = QString("SELECT noteText FROM Notes WHERE videoID = %1").arg(videoId);
+    QSqlQuery query = dbInstance->execQuery(queryStr);
+
+    if (query.next()) {
+        ui->currentVideoNote_textEdit->setPlainText(query.value("noteText").toString());
+    } else {
+        ui->currentVideoNote_textEdit->clear();
+    }
+}
+
+void MainWindow::saveCurrentVideoNote() {
+    if (currentPlayingVideoId <= 0) return;
+
+    QString noteText = ui->currentVideoNote_textEdit->toPlainText();
+    int playlistId = ui->playlistList->currentData().toInt();
+
+    if (playlistId <= 0) return;
+
+    // Check if note already exists for this video
+    QString checkQuery = QString("SELECT noteID FROM Notes WHERE videoID = %1").arg(currentPlayingVideoId);
+    QSqlQuery query = dbInstance->execQuery(checkQuery);
+
+    if (query.next()) {
+        // Update
+        QSqlQuery q(dbInstance->database());
+        q.prepare("UPDATE Notes SET noteText = :noteText WHERE videoID = :videoId");
+        q.bindValue(":noteText", noteText);
+        q.bindValue(":videoId", currentPlayingVideoId);
+        if (!q.exec()) {
+            qCritical() << "Failed to update note:" << q.lastError().text();
+        }
+    } else {
+        // Insert
+        QSqlQuery q(dbInstance->database());
+        q.prepare("INSERT INTO Notes (playlistId, videoID, noteText) VALUES (:playlistId, :videoId, :noteText)");
+        q.bindValue(":playlistId", playlistId);
+        q.bindValue(":videoId", currentPlayingVideoId);
+        q.bindValue(":noteText", noteText);
+        if (!q.exec()) {
+            qCritical() << "Failed to insert note:" << q.lastError().text();
+        }
+    }
+}
+
+bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
+    if (obj == ui->currentVideoNote_textEdit) {
+        if (event->type() == QEvent::FocusOut) {
+            saveCurrentVideoNote();
+        }
+    }
+    return QMainWindow::eventFilter(obj, event);
+}
+
