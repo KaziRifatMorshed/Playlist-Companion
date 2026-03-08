@@ -226,6 +226,7 @@ void MainWindow::updatePlaylistListCombo() {
 }
 
 void MainWindow::populateVideoTable(int playlistId) {
+  isPopulatingTable = true;
   // 1. Clear existing data
   currentVideoList.clear();
   ui->allVideosTableWidget->setRowCount(0);
@@ -264,8 +265,7 @@ void MainWindow::populateVideoTable(int playlistId) {
     QTableWidgetItem *statusItem = new QTableWidgetItem();
     statusItem->setFlags(Qt::ItemIsUserCheckable | Qt::ItemIsEnabled |
                          Qt::ItemIsSelectable);
-    // BUG: user checkbox e check kore data change kortese but database e save
-    // hocche na
+
     statusItem->setCheckState(
         vdo.isWatched ? Qt::Checked
                       : Qt::Unchecked); // Set Checkbox state based on DB value
@@ -297,6 +297,7 @@ void MainWindow::populateVideoTable(int playlistId) {
 
     row++;
   }
+  isPopulatingTable = false;
 }
 
 void MainWindow::on_playlistList_currentIndexChanged(int index) {
@@ -582,6 +583,49 @@ void MainWindow::on_allVideosTableWidget_cellClicked(int row,
   }
 }
 
+void MainWindow::on_allVideosTableWidget_cellChanged(int row, int column) {
+  if (isPopulatingTable || column != 0) {
+    return;
+  }
+
+  QTableWidgetItem *item = ui->allVideosTableWidget->item(row, 0);
+  if (!item) return;
+
+  int videoId = item->data(Qt::UserRole).toInt();
+  bool isChecked = (item->checkState() == Qt::Checked);
+
+  // 1. Update Video table
+  QString updateVideoQuery =
+      QString("UPDATE Video SET isWatched = %1 WHERE videoID = %2")
+          .arg(isChecked ? 1 : 0)
+          .arg(videoId);
+  dbInstance->execQuery(updateVideoQuery);
+
+  // 2. Update Playlist watchedCount
+  int currentPlaylistId = ui->playlistList->currentData().toInt();
+  if (currentPlaylistId > 0) {
+    QString updatePlaylistQuery;
+    if (isChecked) {
+      updatePlaylistQuery =
+          QString("UPDATE Playlist SET watchedCount = watchedCount + 1, "
+                  "lastWatchedDateTime = '%1' WHERE playlistId = %2")
+              .arg(QDateTime::currentDateTime().toString(Qt::ISODate))
+              .arg(currentPlaylistId);
+    } else {
+      updatePlaylistQuery =
+          QString("UPDATE Playlist SET watchedCount = watchedCount - 1 WHERE "
+                  "playlistId = %1")
+              .arg(currentPlaylistId);
+    }
+    dbInstance->execQuery(updatePlaylistQuery);
+
+    // 3. Refresh UI (Playlist counts, progress bar, etc.)
+    updatePlaylistListCombo(); // This updates the combo box and global variables
+    // To update the progress bar and other labels for the currently selected playlist
+    on_playlistList_currentIndexChanged(ui->playlistList->currentIndex());
+  }
+}
+
 void MainWindow::updateVideoGroupBox(int videoId) {
     ui->currentVideoThumbnail->clear(); // Clear previous thumbnail
 
@@ -652,7 +696,7 @@ void MainWindow::generateThumbnail(const QString &videoPath) {
     m_mediaPlayer->setSource(QUrl::fromLocalFile(videoPath));
 
     // 3. Connect to durationChanged (Single Shot)
-    QObject::connect(m_mediaPlayer, &QMediaPlayer::durationChanged, this, [=](qint64 duration) {
+    QObject::connect(m_mediaPlayer, &QMediaPlayer::durationChanged, this, [this, videoPath](qint64 duration) {
         if (duration > 0 && currentThumbnailPath == videoPath) {
             // Calculate a random position (maybe not the very end)
             qint64 randomPosition = QRandomGenerator::global()->bounded(duration * 0.9);
@@ -662,7 +706,7 @@ void MainWindow::generateThumbnail(const QString &videoPath) {
     }, Qt::SingleShotConnection);
 
     // 4. Timeout to handle failures
-    QTimer::singleShot(3000, this, [=]() {
+    QTimer::singleShot(3000, this, [this, videoPath]() {
         if (currentThumbnailPath == videoPath && m_mediaPlayer->playbackState() == QMediaPlayer::StoppedState) {
             // Check if we still haven't gotten a frame
             ui->currentVideoThumbnail->setText("Thumbnail failed");

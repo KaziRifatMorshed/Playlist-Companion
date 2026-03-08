@@ -34,6 +34,7 @@ private slots:
         int index); // Slot to handle when user selects a different playlist from
                     // the combo box
     void on_allVideosTableWidget_cellClicked(int row, int column);
+    void on_allVideosTableWidget_cellChanged(int row, int column);
     void playThisVdo_clicked();
     void showNextVideo_clicked();
     void showPrevVideo_clicked();
@@ -56,6 +57,7 @@ private:
   QString defaultMediaPlayer;
   QString currentOS;
   QString currentThumbnailPath; // To track currently being generated thumbnail
+  bool isPopulatingTable = false; // To prevent recursion in cellChanged
 
   // --- Helper Function ---
   void initGeneralSettings();
