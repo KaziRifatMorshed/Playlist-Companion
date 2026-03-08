@@ -72,7 +72,7 @@ void AddNewPlaylistWindow::on_pushButton_2_clicked() { // SAVE TO DB
   printdebug << "Started saving to DB";
   // 1. Fetch data from UI
   QString title = ui->playlistTitle->text();
-  QString path = ui->folderPath->text();
+  QString path = ui->folderPath->text(); // this value is sensitive
   QString status =
       ui->comboBox->currentText(); // Status: Planned, Watching, Completed
 

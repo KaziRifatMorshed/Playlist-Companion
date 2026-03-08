@@ -26,6 +26,7 @@ private:
   SQliteDB *dbInstance;
 
   void updatePlayerList(Ui::Settings *ui);
+  void updateBackupLabels();
 };
 
 #endif // SETTINGS_H

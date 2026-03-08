@@ -4,8 +4,10 @@
 #include <QBrush> // REQUIRED for setting the background brush
 #include <QColor> // REQUIRED for setting the background color
 #include <QCoreApplication>
+#include <QDir>
 #include <QFile> // REQUIRED for checking file existence
 #include <QFileDialog>
+#include <QFileInfoList>
 #include <QMessageBox>
 #include <QString>
 #include <QTableWidget>
@@ -106,7 +108,7 @@ void Settings::updatePlayerList(Ui::Settings *ui) {
   ui->listPlayersTableWidget->setRowCount(mediaPlayerEntries.size());
   ui->listPlayersTableWidget->setColumnCount(2);
 
-  // Set headers (Added from previous fix, necessary for a good table)
+  // Set headers
   QStringList labels;
   labels << "Video Player Name" << "Default Path";
   ui->listPlayersTableWidget->setHorizontalHeaderLabels(labels);
@@ -283,9 +285,29 @@ Settings::Settings(QWidget *parent) : QWidget(parent), ui(new Ui::Settings) {
   // Call the updated function
   updatePlayerList(ui);
   updateDfltCombo(ui);
+  updateBackupLabels();
 }
 
 Settings::~Settings() { delete ui; }
+
+void Settings::updateBackupLabels() {
+  QString backupDir = SQliteDB::getDbDirPath();
+  ui->backupLocation_qLabel->setText(backupDir);
+
+  QDir dir(backupDir);
+  QStringList filters;
+  filters << "backup_*.sqlite";
+  dir.setNameFilters(filters);
+  dir.setSorting(QDir::Time); // Newest first
+
+  QFileInfoList list = dir.entryInfoList();
+  if (!list.isEmpty()) {
+    QFileInfo latest = list.first();
+    ui->lastBackup_qLabel->setText(latest.fileName());
+  } else {
+    ui->lastBackup_qLabel->setText("No Backup Found");
+  }
+}
 
 void Settings::on_restoreBackup_clicked() {
 
@@ -293,7 +315,7 @@ void Settings::on_restoreBackup_clicked() {
   QString filter = "SQLite (*.sqlite)";
   QString backupFileName = QFileDialog::getOpenFileName(
       this, "Select a SQLite file that stored previous backup",
-      Settings::dbInstance->getDbDirPath(), filter);
+      SQliteDB::getDbDirPath(), filter);
   // check whether the file exists
   QFile instructionFile(backupFileName);
   if (!instructionFile.open(QFile::ReadOnly)) {
@@ -302,6 +324,8 @@ void Settings::on_restoreBackup_clicked() {
   }
   // perform backup & replacement
   dbInstance->restoreDBfile(backupFileName);
+
+  updateBackupLabels();
 
   // NOTE: upadate UI with new data ; it can be a better approach to close the
   // app and reopen it again
@@ -322,6 +346,7 @@ void Settings::on_createBackup_clicked() {
     QMessageBox::warning(this, "Failed !!!",
                          "Failed to create backup! Please make sure .... ");
   } else {
+    updateBackupLabels();
     QMessageBox::information(this, "Success",
                              "Succcessfully backup created at location: \n\n" +
                                  newlyCreatedBackup);

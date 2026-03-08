@@ -199,9 +199,15 @@
          </widget>
         </item>
         <item row="0" column="1">
-         <widget class="QLabel" name="backupLocation">
+         <widget class="QLabel" name="backupLocation_qLabel">
           <property name="text">
            <string>No Backup Found</string>
+          </property>
+          <property name="wordWrap">
+           <bool>true</bool>
+          </property>
+          <property name="textInteractionFlags">
+           <set>Qt::TextInteractionFlag::LinksAccessibleByMouse|Qt::TextInteractionFlag::TextSelectableByMouse</set>
           </property>
          </widget>
         </item>
@@ -213,9 +219,15 @@
          </widget>
         </item>
         <item row="1" column="1">
-         <widget class="QLabel" name="lastBackup">
+         <widget class="QLabel" name="lastBackup_qLabel">
           <property name="text">
            <string>No Backup Found</string>
+          </property>
+          <property name="wordWrap">
+           <bool>true</bool>
+          </property>
+          <property name="textInteractionFlags">
+           <set>Qt::TextInteractionFlag::LinksAccessibleByMouse|Qt::TextInteractionFlag::TextSelectableByMouse</set>
           </property>
          </widget>
         </item>
