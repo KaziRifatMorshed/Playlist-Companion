@@ -28,6 +28,16 @@ SQliteDB *SQliteDB::instance() {
 #endif
         SQliteDB::dbPath = SQliteDB::dbDirPath + "db_PL.sqlite";
 
+        // Create dbDirPath if it doesn't exist
+        QDir dir(SQliteDB::dbDirPath);
+        if (!dir.exists()) {
+            if (!dir.mkpath(".")) {
+                dbdebug << "Error: Could not create dbDirPath:" << SQliteDB::dbDirPath;
+            } else {
+                dbdebug << "dbDirPath created successfully:" << SQliteDB::dbDirPath;
+            }
+        }
+
         // open db
         dbInstance->openDB(dbInstance->dbPath);
     }
@@ -110,6 +120,16 @@ bool SQliteDB::copyFile(QString src, QString dest) {
     if (!QFile::exists(src)) {
         dbdebug << "Error: Source file does not exist.";
         return false;
+    }
+
+    // 1.5 Ensure destination directory exists
+    QFileInfo destInfo(dest);
+    QDir destDir = destInfo.dir();
+    if (!destDir.exists()) {
+        if (!destDir.mkpath(".")) {
+            dbdebug << "Error: Could not create destination directory:" << destDir.path();
+            return false;
+        }
     }
 
     // 2. Handle Overwrite: Remove destination if it exists
