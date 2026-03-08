@@ -6,6 +6,7 @@
 #include <QFileInfo>
 #include <QMessageBox>
 #include <QRandomGenerator>
+#include <QTime>
 #include <QTimer>
 
 MainWindow::MainWindow(QWidget *parent)
@@ -266,13 +267,18 @@ void MainWindow::populateVideoTable(int playlistId) {
   ui->allVideosTableWidget->setRowCount(0);
 
   // 2. Setup Table Headers (if not done in UI designer)
-  // Column 0: Watched Status, Column 1: Video Name
-  ui->allVideosTableWidget->setColumnCount(2);
-  ui->allVideosTableWidget->setHorizontalHeaderLabels(QStringList() << "Watched?" << "Video Name");
+  // Column 0: Watched Status, Column 1: Video Name, Column 2: Video Length
+  ui->allVideosTableWidget->setColumnCount(3);
+  ui->allVideosTableWidget->setHorizontalHeaderLabels(QStringList()
+                                                      << "Watched?"
+                                                      << "Video Name"
+                                                      << "Video Length");
 
   // Adjust column widths (Status column small, Name column stretches)
   ui->allVideosTableWidget->setColumnWidth(0, 60);
-  ui->allVideosTableWidget->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
+  ui->allVideosTableWidget->horizontalHeader()->setSectionResizeMode(
+      1, QHeaderView::Stretch);
+  ui->allVideosTableWidget->setColumnWidth(2, 100);
 
   // 3. Prepare Query
   // We fetch videos only for the selected playlist
@@ -317,6 +323,16 @@ void MainWindow::populateVideoTable(int playlistId) {
     nameItem->setFlags(nameItem->flags() ^ Qt::ItemIsEditable);
 
     ui->allVideosTableWidget->setItem(row, 1, nameItem);
+
+    // Col 2: Video Length
+    QString timeStr =
+        QTime(0, 0)
+            .addSecs(vdo.duration)
+            .toString(vdo.duration >= 3600 ? "hh:mm:ss" : "mm:ss");
+    QTableWidgetItem *durationItem = new QTableWidgetItem(timeStr);
+    durationItem->setFlags(durationItem->flags() ^ Qt::ItemIsEditable);
+    durationItem->setTextAlignment(Qt::AlignCenter);
+    ui->allVideosTableWidget->setItem(row, 2, durationItem);
 
     // Highlight the current playing video
     if (vdo.videoID == currentPlayingVideoId) {
