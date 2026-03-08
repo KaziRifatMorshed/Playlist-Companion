@@ -55,6 +55,7 @@ private:
   QVector<Video> currentVideoList; // Store videos in memory for easy access
   QString defaultMediaPlayer;
   QString currentOS;
+  QString currentThumbnailPath; // To track currently being generated thumbnail
 
   // --- Helper Function ---
   void initGeneralSettings();

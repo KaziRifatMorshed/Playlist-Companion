@@ -105,7 +105,6 @@ std::vector<std::pair<QString, QString>> mediaPlayerEntries = {
 
 void Settings::updatePlayerList(Ui::Settings *ui) {
   // 1. Setup the table
-  ui->listPlayersTableWidget->setRowCount(mediaPlayerEntries.size());
   ui->listPlayersTableWidget->setColumnCount(2);
 
   // Set headers
@@ -113,98 +112,97 @@ void Settings::updatePlayerList(Ui::Settings *ui) {
   labels << "Video Player Name" << "Default Path";
   ui->listPlayersTableWidget->setHorizontalHeaderLabels(labels);
 
-  // clear all media player paths from DB to add new entries
-  Settings::dbInstance->execQuery("DELETE FROM MediaPlayerPath");
+  // 2. Try to load from DB first
+  QSqlQuery query =
+      dbInstance->execQuery("SELECT mediaPlayerName, mediaPlayerPath FROM "
+                            "MediaPlayerPath ORDER BY mediaPlayerName ASC");
+
+  std::vector<std::pair<QString, QString>> currentEntries;
+  while (query.next()) {
+    currentEntries.push_back({query.value(0).toString(), query.value(1).toString()});
+  }
+
+  // If DB is empty, use defaults and save them
+  if (currentEntries.empty()) {
+    for (const auto &entry : mediaPlayerEntries) {
+      if (QFile::exists(entry.second)) {
+        QString safeName = entry.first;
+        safeName.replace("'", "''");
+        QString safePath = entry.second;
+        safePath.replace("'", "''");
+
+        QString q = QString("INSERT INTO MediaPlayerPath "
+                            "(mediaPlayerName, mediaPlayerPath) "
+                            "VALUES ('%1', '%2')")
+                        .arg(safeName, safePath);
+        dbInstance->execQuery(q);
+        currentEntries.push_back(entry);
+      }
+    }
+  }
+
+  ui->listPlayersTableWidget->setRowCount(currentEntries.size());
 
   int row = 0;
-
-  // 2. Populate the table
-  for (const auto &entry : mediaPlayerEntries) {
+  for (const auto &entry : currentEntries) {
     const QString &name = entry.first;
     const QString &path = entry.second;
 
-    // Check if the file exists on the current system
     bool fileExists = QFile::exists(path);
 
-    // --- Core Logic for Item Flags and Appearance ---
-
-    // --- DB INSERTION LOGIC ---
-    if (fileExists) {
-      // Manually escape single quotes (' -> '') to prevent SQL injection/errors
-      QString safeName = name;
-      safeName.replace("'", "''");
-
-      QString safePath = path;
-      safePath.replace("'", "''");
-
-      // Construct the raw query string
-      // We use INSERT OR REPLACE to update the path if the player name already
-      // exists
-      QString q = QString("INSERT OR REPLACE INTO MediaPlayerPath "
-                          "(mediaPlayerName, mediaPlayerPath) "
-                          "VALUES ('%1', '%2')")
-                      .arg(safeName, safePath);
-
-      // Execute using the requested helper function from SQliteDB
-      SQliteDB::instance()->execQuery(q);
-    }
-
-    // Create QTableWidgetItem for the name and path
     QTableWidgetItem *nameItem = new QTableWidgetItem(name);
     QTableWidgetItem *pathItem = new QTableWidgetItem(path);
 
     if (!fileExists) {
-      // 1. Visually disable: Set text and background color to silver/gray
-      // QBrush disabledBrush(Qt::red); // Use a light color for the background
-
-      // Set the color for both cells
-      // nameItem->setBackground(disabledBrush);
-      // pathItem->setBackground(disabledBrush);
-
-      // 2. Interactively disable: Remove the ItemIsEnabled flag
       Qt::ItemFlags flags = nameItem->flags();
       flags &= ~Qt::ItemIsEnabled;
-
       nameItem->setFlags(flags);
       pathItem->setFlags(flags);
     }
 
-    // Add the items to the current row
     ui->listPlayersTableWidget->setItem(row, 0, nameItem);
     ui->listPlayersTableWidget->setItem(row, 1, pathItem);
-
     row++;
   }
 
-  // Optional: Resize the columns to fit content
   ui->listPlayersTableWidget->resizeColumnsToContents();
 }
 
-void updateDfltCombo(Ui::Settings *ui) {
+void Settings::updateDfltCombo(Ui::Settings *ui) {
   QComboBox *comboBox = ui->dfltMediaPlayerComboBox;
-
-  // 1. Clear any existing items in the combo box
   comboBox->clear();
 
-  // 2. Populate the combo box with media player names
-  for (const auto &entry : mediaPlayerEntries) {
-    const QString &name = entry.first;
-    const QString &path = entry.second;
-
-    // Check if the file exists on the current system
-    bool fileExists = QFile::exists(path);
-
-    // Add the name to the combo box.
-    // NOTE: We use the *name* as the display text, and optionally,
-    // we could store the *path* (entry.second) as the user data.
-    if (fileExists)
-      comboBox->addItem(name);
+  // 1. Fetch current default path from General table
+  QString currentDefaultPath = "";
+  QSqlQuery genQuery = dbInstance->execQuery("SELECT defaultMediaPlayer FROM General WHERE id = 1");
+  if (genQuery.next()) {
+      currentDefaultPath = genQuery.value(0).toString();
   }
 
-  // 3. Select the first item by default
-  // Check if the vector was not empty before trying to select
-  if (!mediaPlayerEntries.empty()) {
-    comboBox->setCurrentIndex(0);
+  // 2. Fetch all players from MediaPlayerPath table
+  QSqlQuery pathQuery = dbInstance->execQuery("SELECT mediaPlayerName, mediaPlayerPath FROM MediaPlayerPath ORDER BY mediaPlayerName ASC");
+  
+  int defaultIndex = -1;
+  int currentIndex = 0;
+  while (pathQuery.next()) {
+      QString name = pathQuery.value(0).toString();
+      QString path = pathQuery.value(1).toString();
+      
+      // Only add to combo if file exists
+      if (QFile::exists(path)) {
+          comboBox->addItem(name, path); // Store path as userData
+          if (!currentDefaultPath.isEmpty() && path == currentDefaultPath) {
+              defaultIndex = currentIndex;
+          }
+          currentIndex++;
+      }
+  }
+
+  // 3. Set current selection
+  if (defaultIndex != -1) {
+      comboBox->setCurrentIndex(defaultIndex);
+  } else if (comboBox->count() > 0) {
+      comboBox->setCurrentIndex(0);
   }
 }
 
@@ -212,47 +210,19 @@ void updateDfltCombo(Ui::Settings *ui) {
 // private slots:
 void Settings::on_dfltMediaPlayerComboBox_currentTextChanged(
     const QString &arg1) {
-  // 1. Basic validation
-  if (arg1.isEmpty()) {
-    return;
-  }
+  if (arg1.isEmpty()) return;
 
-  // 2. Prepare the Name for the SELECT query
-  // We must escape quotes HERE first to safely find the path
-  QString safeLookupName = arg1;
-  safeLookupName.replace("'", "''");
+  QString pathFound = ui->dfltMediaPlayerComboBox->currentData().toString();
+  if (pathFound.isEmpty()) return;
 
-  // 3. Fetch the Path from DB
-  // Notice the added single quotes around '%1'
-  QString selectQ = QString("SELECT mediaPlayerPath FROM MediaPlayerPath WHERE "
-                            "mediaPlayerName = '%1'")
-                        .arg(safeLookupName);
-
-  QSqlQuery temp = dbInstance->execQuery(selectQ);
-
-  QString pathFound = "";
-
-  // CRITICAL FIX: You must call next() to get the record
-  if (temp.next()) {
-    pathFound = temp.value("mediaPlayerPath").toString();
-  } else {
-    qWarning() << "[Settings] Could not find path for player:" << arg1;
-    return; // Stop if no path found
-  }
-
-  // 4. Escape the Path for the UPDATE query
-  // The path (e.g., C:\Program Files\...) might contain special chars
   QString safePath = pathFound;
   safePath.replace("'", "''");
 
-  // 5. Update the General table
   QString updateQ =
       QString("UPDATE General SET defaultMediaPlayer = '%1' WHERE id = 1")
           .arg(safePath);
 
   dbInstance->execQuery(updateQ);
-
-  qDebug() << "[Settings] Default media player set to path:" << pathFound;
 }
 
 /*
@@ -275,6 +245,58 @@ void setDefaultPlayer(Ui::Settings *ui) {
 */
 
 // --- Settings Constructor and Destructor ---
+
+void Settings::on_ExitPushButton_clicked() {
+  // 1. Save all paths from listPlayersTableWidget to MediaPlayerPath table
+  for (int i = 0; i < ui->listPlayersTableWidget->rowCount(); ++i) {
+    QTableWidgetItem *nameItem = ui->listPlayersTableWidget->item(i, 0);
+    QTableWidgetItem *pathItem = ui->listPlayersTableWidget->item(i, 1);
+    if (nameItem && pathItem) {
+      QString name = nameItem->text();
+      QString path = pathItem->text();
+
+      QString safeName = name;
+      safeName.replace("'", "''");
+      QString safePath = path;
+      safePath.replace("'", "''");
+
+      QString q = QString("INSERT OR REPLACE INTO MediaPlayerPath "
+                          "(mediaPlayerName, mediaPlayerPath) "
+                          "VALUES ('%1', '%2')")
+                      .arg(safeName, safePath);
+      dbInstance->execQuery(q);
+    }
+  }
+
+  // 2. Save the selected default media player's PATH to General table
+  QString selectedPlayerName = ui->dfltMediaPlayerComboBox->currentText();
+  if (!selectedPlayerName.isEmpty()) {
+    // Find the path for this player in the table (it's fresher than DB)
+    QString selectedPath = "";
+    for (int i = 0; i < ui->listPlayersTableWidget->rowCount(); ++i) {
+      QTableWidgetItem *nameItem = ui->listPlayersTableWidget->item(i, 0);
+      if (nameItem && nameItem->text() == selectedPlayerName) {
+        QTableWidgetItem *pathItem = ui->listPlayersTableWidget->item(i, 1);
+        if (pathItem) {
+          selectedPath = pathItem->text();
+        }
+        break;
+      }
+    }
+
+    if (!selectedPath.isEmpty()) {
+      QString safePath = selectedPath;
+      safePath.replace("'", "''");
+      QString updateQ =
+          QString("UPDATE General SET defaultMediaPlayer = '%1' WHERE id = 1")
+              .arg(safePath);
+      dbInstance->execQuery(updateQ);
+    }
+  }
+
+  emit settingsChanged();
+  this->close();
+}
 
 Settings::Settings(QWidget *parent) : QWidget(parent), ui(new Ui::Settings) {
   ui->setupUi(this);

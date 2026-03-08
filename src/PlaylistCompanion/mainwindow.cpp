@@ -51,6 +51,9 @@ MainWindow::~MainWindow() { delete ui; }
 void MainWindow::on_pushButton_3_clicked() // settings
 {
     settingsWidgt = new Settings();
+    // Connect the signal before showing
+    connect(settingsWidgt, &Settings::settingsChanged, this, &MainWindow::initGeneralSettings);
+
     // 2. Set Modality: This disables the MainWindow while Settings is open
     settingsWidgt->setWindowModality(Qt::ApplicationModal);
     // 3. (Optional) Make sure it deletes itself from memory when closed
@@ -560,6 +563,9 @@ void MainWindow::on_allVideosTableWidget_cellClicked(int row,
   if (item) {
     int videoId = item->data(Qt::UserRole).toInt();
     if (videoId > 0) {
+      if (currentPlayingVideoId == videoId) {
+          return; // Already selected, skip re-generation and re-population
+      }
       // Do NOT play the video, just update the current selection and UI
       currentPlayingVideoId = videoId;
       populateVideoTable(lastWatchedPlId); // Re-populate to update highlight
@@ -624,31 +630,34 @@ void MainWindow::generateThumbnail(const QString &videoPath) {
         return;
     }
 
+    currentThumbnailPath = videoPath; // Set active path
+    ui->currentVideoThumbnail->setText("Generating...");
+
+    // 1. Stop and reset the player
+    m_mediaPlayer->stop();
+    m_mediaPlayer->setSource(QUrl()); // Clear current source
+    
+    // Disconnect any existing durationChanged connections
+    QObject::disconnect(m_mediaPlayer, &QMediaPlayer::durationChanged, nullptr, nullptr);
+
+    // 2. Setup the player
     m_mediaPlayer->setSource(QUrl::fromLocalFile(videoPath));
 
-    // We need to wait for the media to be loaded to get its duration.
-    // We connect to the durationChanged signal once.
-    QObject::connect(m_mediaPlayer, &QMediaPlayer::durationChanged, m_mediaPlayer, [=](qint64 duration) {
-        if (duration > 0) {
-            // Disconnect this connection so it doesn't fire again for this player
-            QObject::disconnect(m_mediaPlayer, &QMediaPlayer::durationChanged, nullptr, nullptr);
-
-            // Calculate a random position
-            qint64 randomPosition = QRandomGenerator::global()->bounded(duration);
+    // 3. Connect to durationChanged (Single Shot)
+    QObject::connect(m_mediaPlayer, &QMediaPlayer::durationChanged, this, [=](qint64 duration) {
+        if (duration > 0 && currentThumbnailPath == videoPath) {
+            // Calculate a random position (maybe not the very end)
+            qint64 randomPosition = QRandomGenerator::global()->bounded(duration * 0.9);
             m_mediaPlayer->setPosition(randomPosition);
-
-            // Play briefly to ensure a frame is rendered
             m_mediaPlayer->play();
         }
     }, Qt::SingleShotConnection);
 
-    // If durationChanged doesn't fire (e.g., for an invalid video file),
-    // we should have a timeout.
+    // 4. Timeout to handle failures
     QTimer::singleShot(3000, this, [=]() {
-        if (m_mediaPlayer->duration() == 0) { // If it still hasn't loaded
-            QObject::disconnect(m_mediaPlayer, &QMediaPlayer::durationChanged, nullptr, nullptr);
+        if (currentThumbnailPath == videoPath && m_mediaPlayer->playbackState() == QMediaPlayer::StoppedState) {
+            // Check if we still haven't gotten a frame
             ui->currentVideoThumbnail->setText("Thumbnail failed");
-            m_mediaPlayer->stop();
         }
     });
 }
@@ -657,16 +666,19 @@ void MainWindow::onFrameChanged(const QVideoFrame &frame) {
     if (!frame.isValid()) {
         return;
     }
-    // Stop the player as soon as we have one frame.
+
+    // Capture the frame ONLY if it's for the currently active request
+    // Stop the player immediately regardless
     m_mediaPlayer->stop();
 
     QImage image = frame.toImage();
-    if (!image.isNull()) {
+    if (!image.isNull() && !currentThumbnailPath.isEmpty()) {
         ui->currentVideoThumbnail->setPixmap(QPixmap::fromImage(image).scaled(
             ui->currentVideoThumbnail->size(),
             Qt::KeepAspectRatio,
             Qt::SmoothTransformation
         ));
+        currentThumbnailPath = ""; // Success! Clear the path.
     }
 }
 
