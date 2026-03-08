@@ -492,6 +492,23 @@ void MainWindow::watchedThisVdo(int videoId) {
 }
 
 void MainWindow::vdoNotWatched(int videoId) {
+  // First, check if the video is already not watched. If so, do nothing.
+  Video currentVideo;
+  bool found = false;
+  for (const auto &vdo : currentVideoList) {
+    if (vdo.videoID == videoId) {
+      currentVideo = vdo;
+      found = true;
+      break;
+    }
+  }
+
+  if (found && !currentVideo.isWatched) {
+    // If already not watched, just do nothing or maybe just update next info
+    // if needed.
+    return;
+  }
+
   QString updateVideoQuery =
       QString("UPDATE Video SET isWatched = 0 WHERE videoID = %1").arg(videoId);
   dbInstance->execQuery(updateVideoQuery);
@@ -510,7 +527,8 @@ void MainWindow::vdoNotWatched(int videoId) {
 
     updatePlaylistListCombo(); // Refresh playlist combo to update counts
     populateVideoTable(currentPlaylistId); // Refresh video table
-  }}
+  }
+}
 
 void MainWindow::playThisVdo(int videoId) {
   // 1. Find the video in the currentVideoList
