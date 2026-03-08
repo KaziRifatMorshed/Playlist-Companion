@@ -16,6 +16,7 @@
 #include <QtSql/QSqlQuery>
 
 #define dbdebug qDebug() << "[sqLiteDB] "
+#define dbcritical qCritical() << "[sqLiteDB][CRITICAL] "
 
 class SQliteDB {
 

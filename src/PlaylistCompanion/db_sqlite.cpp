@@ -85,17 +85,21 @@ QSqlDatabase &SQliteDB::database() { return db; }
 
 QString SQliteDB::backupDBfile() {
     QString newlyCreatedBackup =
-        dbDirPath + "backup_" +
+        dbDirPath + "_backup_" +
         QDateTime::currentDateTime().toString("yyyy-MM-dd_HH-mm-ss") +
         ".sqlite";
-    copyFile(dbPath, newlyCreatedBackup);
-    dbdebug << "db backup created at :" << newlyCreatedBackup;
-    return newlyCreatedBackup;
+    if (copyFile(dbPath, newlyCreatedBackup)) {
+        dbdebug << "db backup created at :" << newlyCreatedBackup;
+        return newlyCreatedBackup;
+    }
+    return "";
 }
 
 void SQliteDB::restoreDBfile(QString targetFilePath) {
     backupDBfile();
-    copyFile(targetFilePath, dbInstance->dbPath);
+    if (copyFile(targetFilePath, dbInstance->dbPath)) {
+        dbdebug << "Restored successfully:" << dbInstance->dbPath;
+    }
 }
 
 SQliteDB::SQliteDB() {}
