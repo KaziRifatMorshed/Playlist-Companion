@@ -139,13 +139,20 @@ void AddNewPlaylistWindow::on_pushButton_2_clicked() { // SAVE TO DB
       for (const QString &videoPath : vdos.fileList) {
         QString safeVideoPath = videoPath;
         qDebug() << safeVideoPath;
+        
+        QFileInfo videoInfo(videoPath);
+        QString videoTitle = videoInfo.fileName();
+        QString safeVideoTitle = videoTitle;
+        safeVideoTitle.replace("'", "''");
+
         safeVideoPath.replace("'", "''");
 
         QString videoSql =
             QString(
-                "INSERT INTO Video (playlistID, videoPath) VALUES (%1, '%2');")
+                "INSERT INTO Video (playlistID, videoPath, videoTitle) VALUES (%1, '%2', '%3');")
                 .arg(newPlaylistID)
-                .arg(safeVideoPath);
+                .arg(safeVideoPath)
+                .arg(safeVideoTitle);
         dbInstance->execQuery(videoSql);
       }
 
