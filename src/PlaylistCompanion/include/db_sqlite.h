@@ -5,6 +5,7 @@
 #include <QDateTime>
 #include <QDebug>
 #include <QFile>
+#include <QDir>
 #include <QFileInfo>
 #include <QMutex>
 #include <QMutexLocker>
