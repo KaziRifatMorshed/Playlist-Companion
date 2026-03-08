@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 
 #include <QApplication>
+#include <QIcon>
 #include <QLocale>
 #include <QTranslator>
 #include <QtGlobal>
@@ -45,6 +46,7 @@ int main(int argc, char *argv[])
 
     qInstallMessageHandler(myMessageOutput);
     QApplication a(argc, argv);
+    a.setWindowIcon(QIcon(":/logo/logo.ico"));
 
     QTranslator translator;
     const QStringList uiLanguages = QLocale::system().uiLanguages();

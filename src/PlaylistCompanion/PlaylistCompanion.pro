@@ -39,4 +39,5 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 RESOURCES += \
     Playlist-Companion_resources.qrc
+win32: RC_ICONS = logo/logo.ico
 QT += multimedia
