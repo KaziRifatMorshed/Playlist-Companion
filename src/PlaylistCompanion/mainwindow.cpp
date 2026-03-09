@@ -10,7 +10,8 @@
 #include <QTimer>
 
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent), ui(new Ui::MainWindow) {
+    : QMainWindow(parent), ui(new Ui::MainWindow), settingsWidgt(nullptr),
+      playlistWindow(nullptr) {
   ui->setupUi(this);
   ui->currentVideoNote_textEdit->installEventFilter(this);
   MainWindow::dbInstance = SQliteDB::instance();
@@ -53,9 +54,16 @@ MainWindow::~MainWindow() { delete ui; }
 
 void MainWindow::on_pushButton_3_clicked() // settings
 {
+    if (settingsWidgt) {
+        settingsWidgt->activateWindow();
+        settingsWidgt->raise();
+        return;
+    }
+
     settingsWidgt = new Settings();
     // Connect the signal before showing
     connect(settingsWidgt, &Settings::settingsChanged, this, &MainWindow::initGeneralSettings);
+    connect(settingsWidgt, &Settings::destroyed, this, [this]() { settingsWidgt = nullptr; });
 
     // 2. Set Modality: This disables the MainWindow while Settings is open
     settingsWidgt->setWindowModality(Qt::ApplicationModal);
@@ -66,12 +74,20 @@ void MainWindow::on_pushButton_3_clicked() // settings
 }
 
 void MainWindow::on_editPlaylistButton_clicked() {
+  if (playlistWindow) {
+    playlistWindow->activateWindow();
+    playlistWindow->raise();
+    return;
+  }
   int playlistId = ui->playlistList->currentData().toInt();
   if (playlistId > 0) {
     playlistWindow = new AddNewPlaylistWindow(nullptr, playlistId);
     playlistWindow->setAttribute(Qt::WA_DeleteOnClose);
-    connect(playlistWindow, &AddNewPlaylistWindow::destroyed, this,
-            &MainWindow::updatePlaylistListCombo);
+    playlistWindow->setWindowModality(Qt::ApplicationModal);
+    connect(playlistWindow, &AddNewPlaylistWindow::destroyed, this, [this]() {
+      playlistWindow = nullptr;
+      updatePlaylistListCombo();
+    });
     playlistWindow->show();
   } else {
     QMessageBox::warning(this, "No playlist selected",
@@ -80,6 +96,11 @@ void MainWindow::on_editPlaylistButton_clicked() {
 }
 
 void MainWindow::on_createNewPlaylist_clicked() {
+  if (playlistWindow) {
+    playlistWindow->activateWindow();
+    playlistWindow->raise();
+    return;
+  }
   // get which directory
   QString plpath = QFileDialog::getExistingDirectory(
       this, "Select a folder that contains your desired videos",
@@ -93,8 +114,11 @@ void MainWindow::on_createNewPlaylist_clicked() {
         nullptr, -1, plpath); // this does not open new window, rather overrides
                               // current window
     playlistWindow->setAttribute(Qt::WA_DeleteOnClose);
-    connect(playlistWindow, &AddNewPlaylistWindow::destroyed, this,
-            &MainWindow::updatePlaylistListCombo);
+    playlistWindow->setWindowModality(Qt::ApplicationModal);
+    connect(playlistWindow, &AddNewPlaylistWindow::destroyed, this, [this]() {
+      playlistWindow = nullptr;
+      updatePlaylistListCombo();
+    });
     playlistWindow->show();
   }
 }
