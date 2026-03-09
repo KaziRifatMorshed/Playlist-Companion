@@ -432,6 +432,8 @@ void MainWindow::on_playlistList_currentIndexChanged(int index) {
     ui->totalHourWatched->setText("");
     ui->progressBar->setValue(0);
     ui->playlistProgressCount->setText("0/0");
+    ui->editPlaylistButton->setEnabled(false);
+    ui->removePlaylist->setEnabled(false);
   }
 }
 
@@ -472,6 +474,10 @@ void MainWindow::updatePlaylistInfoLabels(int playlistId) {
             .arg(pl.watchedCount)
             .arg(pl.totalVideoCount));
             
+    // Ensure buttons are enabled since a playlist is active
+    ui->editPlaylistButton->setEnabled(true);
+    ui->removePlaylist->setEnabled(true);
+
     // Update memory list so it stays in sync
     for (int i = 0; i < listOfPlaylists.size(); ++i) {
       if (listOfPlaylists[i].playlistId == playlistId) {

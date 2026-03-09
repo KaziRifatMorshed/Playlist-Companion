@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>839</width>
-    <height>762</height>
+    <width>882</width>
+    <height>757</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -225,7 +225,7 @@
        <item>
         <layout class="QVBoxLayout" name="verticalLayout_5" stretch="2,0">
          <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_8">
+          <layout class="QHBoxLayout" name="horizontalLayout_8" stretch="1,2">
            <item>
             <widget class="QLabel" name="currentVideoThumbnail">
              <property name="sizePolicy">
@@ -577,7 +577,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>839</width>
+     <width>882</width>
      <height>22</height>
     </rect>
    </property>
