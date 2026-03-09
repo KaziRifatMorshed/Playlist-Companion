@@ -74,6 +74,7 @@ private:
   void updatePlaylistStatus(int playlistId); // Updates status based on watchedCount
   void updatePlaylistInfoLabels(int playlistId); // Updates only the progress bar and info labels
   int sumRemainingTime(int playlistId); // Sums duration of unwatched videos in hours
+  int sumWatchedTime(int playlistId); // Sums duration of watched videos in hours
   QString currentVideoTitle();      // Returns the title of the current video
   void updateVideoGroupBox(int videoId); // Updates the video group box UI
   void updateTableHighlight(); // Updates only the highlights in the table without re-populating

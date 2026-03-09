@@ -137,7 +137,7 @@ void MainWindow::on_removePlaylist_clicked() {
           // Clear labels
           ui->playlistCreationDate->setText("");
           ui->lastWatched->setText("");
-          ui->totalTime->setText("");
+          ui->totalHourWatched->setText("");
           ui->progressBar->setValue(0);
           ui->playlistProgressCount->setText("0/0");
       }
@@ -429,7 +429,7 @@ void MainWindow::on_playlistList_currentIndexChanged(int index) {
 
     ui->playlistCreationDate->setText("");
     ui->lastWatched->setText("");
-    ui->totalTime->setText("");
+    ui->totalHourWatched->setText("");
     ui->progressBar->setValue(0);
     ui->playlistProgressCount->setText("0/0");
   }
@@ -455,9 +455,9 @@ void MainWindow::updatePlaylistInfoLabels(int playlistId) {
     ui->playlistCreationDate->setText(pl.creationDateTime);
     ui->lastWatched->setText(pl.lastWatchedDateTime);
     
-    int remainingHours = sumRemainingTime(playlistId);
-    ui->totalTime->setText(QString("%1/%2 hours")
-                           .arg(remainingHours)
+    int watchedHours = sumWatchedTime(playlistId);
+    ui->totalHourWatched->setText(QString("%1/%2 hours")
+                           .arg(watchedHours)
                            .arg(pl.totalTimeHour));
 
     // Progress bar and count
@@ -828,6 +828,16 @@ void MainWindow::updatePlaylistStatus(int playlistId) {
 int MainWindow::sumRemainingTime(int playlistId) {
     if (playlistId <= 0) return 0;
     QString q = QString("SELECT SUM(duration) FROM Video WHERE playlistID = %1 AND isWatched = 0").arg(playlistId);
+    QSqlQuery query = dbInstance->execQuery(q);
+    if (query.next()) {
+        return qRound(query.value(0).toLongLong() / 3600.0);
+    }
+    return 0;
+}
+
+int MainWindow::sumWatchedTime(int playlistId) {
+    if (playlistId <= 0) return 0;
+    QString q = QString("SELECT SUM(duration) FROM Video WHERE playlistID = %1 AND isWatched = 1").arg(playlistId);
     QSqlQuery query = dbInstance->execQuery(q);
     if (query.next()) {
         return qRound(query.value(0).toLongLong() / 3600.0);
