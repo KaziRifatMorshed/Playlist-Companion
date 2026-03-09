@@ -9,12 +9,21 @@ VERSION = 1.1.0
 TARGET = PlaylistCompanion
 DISPLAY_NAME = "Playlist Companion"
 PUBLISHER = "Kazi Rifat Morshed CSEKU230220"
+DESCRIPTION = "Local Video Playlist Progress Tracker | Productivity Tool"
+CONTACT_EMAIL = "rifat230220@cseku.ac.bd"
 APP_VERSION = "v$${VERSION}"
+
+# Get Git Hash (if in a git repo)
+GIT_HASH = $$system(git rev-parse --short HEAD)
+isEmpty(GIT_HASH): GIT_HASH = "unknown"
 
 # Pass to C++ as macros
 DEFINES += APP_VERSION_STR=\"\\\"$$APP_VERSION\\\"\"
 DEFINES += APP_NAME_STR=\"\\\"$$DISPLAY_NAME\\\"\"
 DEFINES += APP_PUBLISHER_STR=\"\\\"$$PUBLISHER\\\"\"
+DEFINES += APP_DESC_STR=\"\\\"$$DESCRIPTION\\\"\"
+DEFINES += APP_CONTACT_STR=\"\\\"$$CONTACT_EMAIL\\\"\"
+DEFINES += GIT_HASH_STR=\"\\\"$$GIT_HASH\\\"\"
 
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.

@@ -183,6 +183,7 @@ void MainWindow::on_actionExit_triggered() {
 void MainWindow::on_actionAbout_triggered() {
   QMessageBox::about(this, "About Playlist Companion",
                      QString("<h3>Playlist Companion %1</h3>").arg(APP_VERSION_STR) +
+                     "<p><b>" APP_DESC_STR "</b></p>"
                      "<p>A simple and efficient tool to manage and track your "
                      "video learning progress.</p>"
                      "<p>Features:"
@@ -195,8 +196,10 @@ void MainWindow::on_actionAbout_triggered() {
                      "<p>GitHub: <a href=\"https://github.com/KaziRifatMorshed/Playlist-Companion\">"
                      "<span style=\" text-decoration: underline; color:#27bf73;\">"
                      "https://github.com/KaziRifatMorshed/Playlist-Companion</span></a></p>"
-                     "<p>Publisher: " APP_PUBLISHER_STR "</p>"
+                     "<p>Publisher: " APP_PUBLISHER_STR "<br>"
+                     "Contact: <a href=\"mailto:" APP_CONTACT_STR "\">" APP_CONTACT_STR "</a></p>"
                      "<p>Acknowledgement: Pritom Das (CSEKU250220)</p>"
+                     "<p><small>Build: " GIT_HASH_STR "</small></p>"
                      "<p>Developed for continuous learning.</p>");
 }
 
