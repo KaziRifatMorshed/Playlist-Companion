@@ -306,7 +306,7 @@ void MainWindow::populateVideoTable(int playlistId) {
                                                       << "Video Length");
 
   // Adjust column widths (Status column small, Name column stretches)
-  ui->allVideosTableWidget->setColumnWidth(0, 60);
+  ui->allVideosTableWidget->setColumnWidth(0, 65);
   ui->allVideosTableWidget->horizontalHeader()->setSectionResizeMode(
       1, QHeaderView::Stretch);
   ui->allVideosTableWidget->setColumnWidth(2, 100);

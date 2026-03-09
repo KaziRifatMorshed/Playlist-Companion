@@ -5,6 +5,8 @@
 #include <QDebug>
 #include <QDir>
 #include <QDirIterator>
+#include <QMessageBox>
+#include <QSet>
 #include <QStringList>
 #include <QVector>
 #include <algorithm>
@@ -30,7 +32,17 @@ AddNewPlaylistWindow::AddNewPlaylistWindow(QWidget *parent, int plListId,
           if (duration > 0) {
               m_totalDurationMs += duration;
               if (m_currentIndex < vdos.fileList.size()) {
-                  vdos.fileDurations.insert(vdos.fileList[m_currentIndex], (int)(duration / 1000));
+                  QString path = vdos.fileList[m_currentIndex];
+                  int durationSec = (int)(duration / 1000);
+                  vdos.fileDurations.insert(path, durationSec);
+
+                  // Update duration in DB if it's an existing playlist
+                  if (playlistID >= 0) {
+                      QString safePath = path;
+                      safePath.replace("'", "''");
+                      dbInstance->execQuery(QString("UPDATE Video SET duration = %1 WHERE playlistID = %2 AND videoPath = '%3'")
+                                            .arg(durationSec).arg(playlistID).arg(safePath));
+                  }
               }
           }
           // Move to next video
@@ -64,7 +76,7 @@ AddNewPlaylistWindow::AddNewPlaylistWindow(QWidget *parent, int plListId,
 
     /* ---- CASE 2 : edit existing playlist ---- */
   } else if (playlistID >= 0) {
-
+    ui->updateVideoListOfThisPlaylist_pushButton->setEnabled(true);
     ui->label->setText(
         "<html><head/><body><p align=\"center\"><span style=\" "
         "font-size:16pt;\">Edit Playlist</span></p></body></html>");
@@ -111,6 +123,67 @@ void AddNewPlaylistWindow::processNextVideo() {
         ui->totalHourWatched->setText(QString::number(totalHours));
         printdebug << "Total duration calculation finished:" << totalHours << "hours";
     }
+}
+
+void AddNewPlaylistWindow::on_updateVideoListOfThisPlaylist_pushButton_clicked() {
+    if (playlistID < 0) return;
+
+    QString folderPath = ui->folderPath->text();
+    if (folderPath.isEmpty()) return;
+
+    printdebug << "Updating video list for playlist ID:" << playlistID;
+
+    // 1. Scan folder for current files
+    VideoCollection currentDiskVdos = getAllVideosFromDir(folderPath);
+
+    // 2. Fetch current DB videos
+    VideoCollection currentDbVdos = getAllVideosFromDB();
+
+    // Convert to sets for easier comparison
+    QSet<QString> diskPaths = QSet<QString>(currentDiskVdos.fileList.begin(), currentDiskVdos.fileList.end());
+    QSet<QString> dbPaths = QSet<QString>(currentDbVdos.fileList.begin(), currentDbVdos.fileList.end());
+
+    QSet<QString> toAdd = diskPaths - dbPaths;
+    QSet<QString> toRemove = dbPaths - diskPaths;
+
+    if (toAdd.isEmpty() && toRemove.isEmpty()) {
+        QMessageBox::information(this, "Update Video List", "No changes detected in the folder.");
+        return;
+    }
+
+    // 3. Update Database
+    dbInstance->execQuery("BEGIN TRANSACTION;");
+
+    // Remove missing videos
+    for (const QString &path : toRemove) {
+        QString safePath = path;
+        safePath.replace("'", "''");
+        dbInstance->execQuery(QString("DELETE FROM Video WHERE playlistID = %1 AND videoPath = '%2'")
+                              .arg(playlistID).arg(safePath));
+    }
+
+    // Add new videos (durations will be 0 for now)
+    for (const QString &path : toAdd) {
+        QString safePath = path;
+        safePath.replace("'", "''");
+        QFileInfo info(path);
+        QString safeTitle = info.fileName().replace("'", "''");
+        dbInstance->execQuery(QString("INSERT INTO Video (playlistID, videoPath, videoTitle, duration) VALUES (%1, '%2', '%3', 0)")
+                              .arg(playlistID).arg(safePath).arg(safeTitle));
+    }
+
+    dbInstance->execQuery("COMMIT;");
+
+    // 4. Update memory and UI
+    vdos = getAllVideosFromDB();
+    ui->totalVideoCount->setText(QString::number(vdos.count));
+
+    // 5. Recalculate durations (this will also update the totalHourWatched label when finished)
+    startDurationCalculation();
+
+    QMessageBox::information(this, "Update Video List",
+                             QString("Updated successfully!\nAdded: %1\nRemoved: %2")
+                             .arg(toAdd.size()).arg(toRemove.size()));
 }
 
 void AddNewPlaylistWindow::on_pushButton_2_clicked() { // SAVE TO DB

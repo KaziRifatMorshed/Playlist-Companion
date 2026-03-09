@@ -30,6 +30,7 @@ public:
 private slots:
     void on_pushButton_2_clicked(); // save button
     void processNextVideo();
+    void on_updateVideoListOfThisPlaylist_pushButton_clicked();
 
 private:
     Ui::AddNewPlaylistWindow *ui;
