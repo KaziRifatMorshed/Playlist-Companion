@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>760</width>
-    <height>804</height>
+    <width>839</width>
+    <height>762</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -430,13 +430,6 @@
      </widget>
     </item>
     <item>
-     <widget class="Line" name="line_4">
-      <property name="orientation">
-       <enum>Qt::Orientation::Horizontal</enum>
-      </property>
-     </widget>
-    </item>
-    <item>
      <layout class="QHBoxLayout" name="horizontalLayout_3">
       <item>
        <widget class="QLabel" name="label_4">
@@ -591,7 +584,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>760</width>
+     <width>839</width>
      <height>21</height>
     </rect>
    </property>
