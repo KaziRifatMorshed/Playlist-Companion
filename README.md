@@ -18,10 +18,30 @@ Playlist Companion is a GUI desktop application built with C++ and the Qt6 frame
 
 ## ✨ Features
 
-*   **Track Progress:** Mark videos as watched to keep track of your progress.
-*   **Take Notes:** Write and save notes for each video.
-*   **Easy Import:** Simply add a folder containing your video files.
-*   **Cross-Platform:** Built with Qt, it can be compiled for Windows, macOS, and Linux.
+*   **Playlist Management:**
+    *   Create, edit, and remove playlists effortlessly.
+    *   **Auto-Import:** Add a folder, and the app automatically scans and imports all video files.
+    *   **Sync:** Update existing playlists to include new videos added to the source folder.
+*   **Progress Tracking:**
+    *   **Watch Status:** Mark videos as watched or unwatched to keep track of your learning journey.
+    *   **Navigation:** Quickly jump between videos with "Next" and "Previous" controls.
+    *   **Visual Indicators:** Highlighting in the video table clearly shows your current progress.
+*   **Detailed Analytics:**
+    *   **Progress Bars:** Real-time visual representation of completion for each playlist.
+    *   **Time Statistics:** Automatically calculates total watched time and remaining time in hours.
+    *   **Completion Stats:** View the number of videos watched versus the total count at a glance.
+*   **Integrated Note-Taking:**
+    *   Write and save persistent notes for *every* video in your playlist.
+    *   Notes are automatically saved and loaded as you navigate through your videos.
+*   **Media Integration:**
+    *   **External Player:** Launch your videos in your favorite external media player.
+    *   **Configurable Settings:** Choose and set your preferred default media player.
+    *   **Thumbnails:** Automatic thumbnail generation to help you visually identify your videos.
+*   **Data Reliability:**
+    *   **SQLite Backend:** All your data is safely stored in a local SQLite database.
+    *   **Backup & Restore:** Built-in tools to create database backups and restore them whenever needed.
+*   **Cross-Platform:**
+    *   Native support for Windows, macOS, and Linux thanks to the Qt6 framework.
 
 ## 🚀 Getting Started
 
