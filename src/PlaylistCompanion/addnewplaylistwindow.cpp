@@ -122,6 +122,14 @@ void AddNewPlaylistWindow::processNextVideo() {
         int totalHours = qRound(m_totalDurationMs / 3600000.0);
         ui->totalHourWatched->setText(QString::number(totalHours));
         printdebug << "Total duration calculation finished:" << totalHours << "hours";
+
+        // Update the Playlist record with new totals if editing
+        if (playlistID >= 0) {
+            int totalCount = ui->totalVideoCount->text().toInt();
+            dbInstance->execQuery(QString("UPDATE Playlist SET totalVideoCount = %1, totalTimeHour = %2 WHERE playlistId = %3")
+                                  .arg(totalCount).arg(totalHours).arg(playlistID));
+            emit playlistDataChanged();
+        }
     }
 }
 
@@ -177,6 +185,7 @@ void AddNewPlaylistWindow::on_updateVideoListOfThisPlaylist_pushButton_clicked()
     // 4. Update memory and UI
     vdos = getAllVideosFromDB();
     ui->totalVideoCount->setText(QString::number(vdos.count));
+    emit playlistDataChanged();
 
     // 5. Recalculate durations (this will also update the totalHourWatched label when finished)
     startDurationCalculation();
@@ -184,6 +193,11 @@ void AddNewPlaylistWindow::on_updateVideoListOfThisPlaylist_pushButton_clicked()
     QMessageBox::information(this, "Update Video List",
                              QString("Updated successfully!\nAdded: %1\nRemoved: %2")
                              .arg(toAdd.size()).arg(toRemove.size()));
+}
+
+void AddNewPlaylistWindow::on_pushButton_clicked() {
+    emit playlistDataChanged();
+    close();
 }
 
 void AddNewPlaylistWindow::on_pushButton_2_clicked() { // SAVE TO DB
@@ -304,6 +318,8 @@ void AddNewPlaylistWindow::on_pushButton_2_clicked() { // SAVE TO DB
 
     dbInstance->execQuery(sql);
   }
+
+  emit playlistDataChanged();
 
   // Close the window after saving
 

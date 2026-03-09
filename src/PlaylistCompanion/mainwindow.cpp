@@ -84,6 +84,8 @@ void MainWindow::on_editPlaylistButton_clicked() {
     playlistWindow = new AddNewPlaylistWindow(nullptr, playlistId);
     playlistWindow->setAttribute(Qt::WA_DeleteOnClose);
     playlistWindow->setWindowModality(Qt::ApplicationModal);
+    connect(playlistWindow, &AddNewPlaylistWindow::playlistDataChanged, this,
+            &MainWindow::updatePlaylistListCombo);
     connect(playlistWindow, &AddNewPlaylistWindow::destroyed, this, [this]() {
       playlistWindow = nullptr;
       updatePlaylistListCombo();
@@ -115,6 +117,8 @@ void MainWindow::on_createNewPlaylist_clicked() {
                               // current window
     playlistWindow->setAttribute(Qt::WA_DeleteOnClose);
     playlistWindow->setWindowModality(Qt::ApplicationModal);
+    connect(playlistWindow, &AddNewPlaylistWindow::playlistDataChanged, this,
+            &MainWindow::updatePlaylistListCombo);
     connect(playlistWindow, &AddNewPlaylistWindow::destroyed, this, [this]() {
       playlistWindow = nullptr;
       updatePlaylistListCombo();
@@ -281,11 +285,13 @@ void MainWindow::updatePlaylistListCombo() {
   // Unblock signals
   combo->blockSignals(false);
 
-  // If the playlist ID is still the same, we only need to update the labels/stats.
-  // If it changed, the combo box signal (if not blocked) or our manual call should handle it.
+  // If the playlist ID is still the same, we still need to refresh everything because
+  // the video list or its durations might have changed.
   int newId = combo->currentData().toInt();
   if (newId == currentId && newId > 0) {
       updatePlaylistInfoLabels(newId);
+      populateVideoTable(newId); // Refresh video list
+      updateVideoGroupBox(currentPlayingVideoId); // Update highlight/thumbnail if needed
   } else {
       on_playlistList_currentIndexChanged(combo->currentIndex());
   }
@@ -973,7 +979,7 @@ void MainWindow::updateVideoGroupBox(int videoId) {
             generateThumbnail(videoPath);
             loadCurrentVideoNote(videoId);
         } else {
-            ui->currentVideoTitle->setText("Video not found");
+            ui->currentVideoTitle->setText("No video selected or Video not found");
             ui->currentVideoNumberInPlaylist->setText("");
             ui->currentVideoNote_textEdit->clear();
         }
