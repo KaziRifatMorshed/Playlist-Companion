@@ -6,6 +6,11 @@
 #include <QTranslator>
 #include <QtGlobal>
 
+#ifdef Q_OS_WIN
+#include <windows.h>
+#include <stdio.h>
+#endif
+
 void myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 {
     // Filter out FFmpeg/QMediaPlayer related output
@@ -40,6 +45,16 @@ void myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QS
 
 int main(int argc, char *argv[])
 {
+#ifdef Q_OS_WIN
+    // Attach to the parent process's console (the CMD window)
+    if (AttachConsole(ATTACH_PARENT_PROCESS)) {
+        // Redirect STDOUT and STDERR to the console
+        (void)freopen("CONOUT$", "w", stdout);
+        (void)freopen("CONOUT$", "w", stderr);
+        printf("\n[Playlist Companion] CLI output attached.\n");
+    }
+#endif
+
     // Silence FFmpeg and Qt Multimedia backend output
     qputenv("QT_LOGGING_RULES", "qt.multimedia.*=false");
     qputenv("FFMPEG_LOG_LEVEL", "quiet");
