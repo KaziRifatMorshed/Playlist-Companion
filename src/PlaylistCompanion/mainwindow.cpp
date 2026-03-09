@@ -376,17 +376,32 @@ void MainWindow::on_playlistList_currentIndexChanged(int index) {
       generalLastVdoId = query.value("lastWatchedVdoId").toInt();
     }
 
-    currentPlayingVideoId = -1; // Reset before checking
-    if (generalLastVdoId != -1) {
-      // Check if the last watched video from General settings belongs to the
-      // currently selected playlist
+    // Determine if currentPlayingVideoId is already valid for this playlist
+    bool alreadyBelongs = false;
+    if (currentPlayingVideoId != -1) {
       QString checkVdoPlaylist = QString("SELECT videoID FROM Video WHERE "
                                          "videoID = %1 AND playlistID = %2")
-                                     .arg(generalLastVdoId)
+                                     .arg(currentPlayingVideoId)
                                      .arg(playlistId);
       QSqlQuery checkQuery = dbInstance->execQuery(checkVdoPlaylist);
       if (checkQuery.next()) {
-        currentPlayingVideoId = generalLastVdoId; // It belongs, so set it
+        alreadyBelongs = true;
+      }
+    }
+
+    if (!alreadyBelongs) {
+      currentPlayingVideoId = -1; // Reset before checking
+      if (generalLastVdoId != -1) {
+        // Check if the last watched video from General settings belongs to the
+        // currently selected playlist
+        QString checkVdoPlaylist = QString("SELECT videoID FROM Video WHERE "
+                                           "videoID = %1 AND playlistID = %2")
+                                       .arg(generalLastVdoId)
+                                       .arg(playlistId);
+        QSqlQuery checkQuery = dbInstance->execQuery(checkVdoPlaylist);
+        if (checkQuery.next()) {
+          currentPlayingVideoId = generalLastVdoId; // It belongs, so set it
+        }
       }
     }
 
@@ -490,7 +505,6 @@ void MainWindow::watchedThisVdo(int videoId) {
     updatePlaylistStatus(currentPlaylistId);
 
     updatePlaylistListCombo(); // Refresh playlist combo to update counts
-    populateVideoTable(currentPlaylistId); // Refresh video table to update checkboxes
   }
   // --- Advance to Next Video ---
   showNextVideo(videoId);
@@ -531,7 +545,6 @@ void MainWindow::vdoNotWatched(int videoId) {
     updatePlaylistStatus(currentPlaylistId);
 
     updatePlaylistListCombo(); // Refresh playlist combo to update counts
-    populateVideoTable(currentPlaylistId); // Refresh video table
   }
 }
 
@@ -798,8 +811,6 @@ void MainWindow::on_allVideosTableWidget_cellChanged(int row, int column) {
 
     // 3. Refresh UI (Playlist counts, progress bar, etc.)
     updatePlaylistListCombo(); // This updates the combo box and global variables
-    // To update the progress bar and other labels for the currently selected playlist
-    on_playlistList_currentIndexChanged(ui->playlistList->currentIndex());
   }
 }
 
