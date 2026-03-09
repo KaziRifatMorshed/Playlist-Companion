@@ -346,6 +346,8 @@ void MainWindow::populateVideoTable(int playlistId) {
           itemToHighlight->setBackground(highlightColor);
         }
       }
+      // Ensure the row is selected when rebuilding the table
+      ui->allVideosTableWidget->selectRow(row);
     }
 
     row++;
@@ -488,6 +490,7 @@ void MainWindow::watchedThisVdo(int videoId) {
     updatePlaylistStatus(currentPlaylistId);
 
     updatePlaylistListCombo(); // Refresh playlist combo to update counts
+    populateVideoTable(currentPlaylistId); // Refresh video table to update checkboxes
   }
   // --- Advance to Next Video ---
   showNextVideo(videoId);
@@ -559,8 +562,8 @@ void MainWindow::playThisVdo(int videoId) {
   // if (!targetVideo.isWatched) {
   //     watchedThisVdo(videoId);
   // }
-  // Refresh table to update highlight (handled by populateVideoTable)
-  populateVideoTable(targetVideo.playlistID);
+  // Refresh table to update highlight
+  updateTableHighlight();
 
   // 4. Update lastWatchedVdoId in General settings
   QString updateGeneralQuery =
@@ -593,16 +596,21 @@ void MainWindow::showNextVideo(int startFromId) {
   int targetId = (startFromId != -1) ? startFromId : currentPlayingVideoId;
   int currentIdx = -1;
   for (int i = 0; i < currentVideoList.size(); ++i) {
-      if (currentVideoList[i].videoID == targetId) {
-          currentIdx = i;
-          break;
-      }
+    if (currentVideoList[i].videoID == targetId) {
+      currentIdx = i;
+      break;
+    }
   }
 
   if (currentIdx != -1 && currentIdx < currentVideoList.size() - 1) {
     currentPlayingVideoId = currentVideoList[currentIdx + 1].videoID;
     updateVideoGroupBox(currentPlayingVideoId);
-    populateVideoTable(lastWatchedPlId); // Repopulate to update highlight
+    // Select the row in the table (triggers currentCellChanged which handles everything if needed,
+    // but we already updated currentPlayingVideoId, so we just need highlight)
+    isPopulatingTable = true;
+    ui->allVideosTableWidget->selectRow(currentIdx + 1);
+    isPopulatingTable = false;
+    updateTableHighlight();
   } else if (currentIdx == currentVideoList.size() - 1) {
     QMessageBox::information(this, "End of Playlist",
                              "This is the last video in the playlist.");
@@ -611,7 +619,10 @@ void MainWindow::showNextVideo(int startFromId) {
     if (!currentVideoList.isEmpty()) {
       currentPlayingVideoId = currentVideoList[0].videoID;
       updateVideoGroupBox(currentPlayingVideoId);
-      populateVideoTable(lastWatchedPlId);
+      isPopulatingTable = true;
+      ui->allVideosTableWidget->selectRow(0);
+      isPopulatingTable = false;
+      updateTableHighlight();
     } else {
       QMessageBox::warning(this, "Navigation Error", "Playlist is empty.");
     }
@@ -623,7 +634,10 @@ void MainWindow::showPrevVideo() {
   if (currentIdx > 0) {
     currentPlayingVideoId = currentVideoList[currentIdx - 1].videoID;
     updateVideoGroupBox(currentPlayingVideoId);
-    populateVideoTable(lastWatchedPlId); // Repopulate to update highlight
+    isPopulatingTable = true;
+    ui->allVideosTableWidget->selectRow(currentIdx - 1);
+    isPopulatingTable = false;
+    updateTableHighlight();
   } else if (currentIdx == 0) {
     QMessageBox::information(this, "Beginning of Playlist",
                              "This is the first video in the playlist.");
@@ -632,13 +646,15 @@ void MainWindow::showPrevVideo() {
     if (!currentVideoList.isEmpty()) {
       currentPlayingVideoId = currentVideoList.last().videoID;
       updateVideoGroupBox(currentPlayingVideoId);
-      populateVideoTable(lastWatchedPlId);
+      isPopulatingTable = true;
+      ui->allVideosTableWidget->selectRow(currentVideoList.size() - 1);
+      isPopulatingTable = false;
+      updateTableHighlight();
     } else {
       QMessageBox::warning(this, "Navigation Error", "Playlist is empty.");
     }
   }
 }
-
 QString MainWindow::currentVideoTitle() {
   for (const auto &vdo : currentVideoList) {
     if (vdo.videoID == currentPlayingVideoId) {
@@ -662,10 +678,48 @@ void MainWindow::on_allVideosTableWidget_cellClicked(int row,
       }
       // Do NOT play the video, just update the current selection and UI
       currentPlayingVideoId = videoId;
-      populateVideoTable(lastWatchedPlId); // Re-populate to update highlight
+      // Update only the highlight without re-populating the whole table
+      updateTableHighlight();
       updateVideoGroupBox(currentPlayingVideoId); // Update the info box
     }
   }
+}
+
+void MainWindow::updateTableHighlight() {
+    isPopulatingTable = true; // Prevent signals from firing during UI update
+    for (int row = 0; row < ui->allVideosTableWidget->rowCount(); ++row) {
+        QTableWidgetItem *firstColItem = ui->allVideosTableWidget->item(row, 0);
+        if (firstColItem) {
+            int videoId = firstColItem->data(Qt::UserRole).toInt();
+            bool isCurrent = (videoId == currentPlayingVideoId);
+            
+            for (int col = 0; col < ui->allVideosTableWidget->columnCount(); ++col) {
+                QTableWidgetItem *item = ui->allVideosTableWidget->item(row, col);
+                if (item) {
+                    if (isCurrent) {
+                        QColor highlightColor(Qt::yellow);
+                        highlightColor.setAlpha(40); // 15% opacity
+                        item->setBackground(highlightColor);
+                    } else {
+                        // Reset background for other rows
+                        item->setBackground(QBrush());
+                    }
+                }
+            }
+        }
+    }
+    isPopulatingTable = false;
+}
+
+void MainWindow::on_allVideosTableWidget_currentCellChanged(int currentRow, int currentColumn, int previousRow, int previousColumn) {
+    if (isPopulatingTable || currentRow < 0) {
+        return;
+    }
+
+    // Reuse the same logic as cellClicked but only if the row actually changed
+    if (currentRow != previousRow) {
+        on_allVideosTableWidget_cellClicked(currentRow, currentColumn);
+    }
 }
 
 void MainWindow::updatePlaylistStatus(int playlistId) {

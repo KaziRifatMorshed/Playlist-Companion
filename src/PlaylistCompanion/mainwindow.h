@@ -34,6 +34,7 @@ private slots:
         int index); // Slot to handle when user selects a different playlist from
                     // the combo box
     void on_allVideosTableWidget_cellClicked(int row, int column);
+    void on_allVideosTableWidget_currentCellChanged(int currentRow, int currentColumn, int previousRow, int previousColumn);
     void on_allVideosTableWidget_cellChanged(int row, int column);
     void playThisVdo_clicked();
     void showNextVideo_clicked();
@@ -74,6 +75,7 @@ private:
   int sumRemainingTime(int playlistId); // Sums duration of unwatched videos in hours
   QString currentVideoTitle();      // Returns the title of the current video
   void updateVideoGroupBox(int videoId); // Updates the video group box UI
+  void updateTableHighlight(); // Updates only the highlights in the table without re-populating
   void loadCurrentVideoNote(int videoId); // Loads the note for the current video
   void saveCurrentVideoNote();           // Saves the note for the current video
 
