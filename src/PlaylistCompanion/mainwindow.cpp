@@ -195,6 +195,7 @@ void MainWindow::on_actionAbout_triggered() {
                      "<p>GitHub: <a href=\"https://github.com/KaziRifatMorshed/Playlist-Companion\">"
                      "<span style=\" text-decoration: underline; color:#27bf73;\">"
                      "https://github.com/KaziRifatMorshed/Playlist-Companion</span></a></p>"
+                     "<p>Publisher: " APP_PUBLISHER_STR "</p>"
                      "<p>Acknowledgement: Pritom Das (CSEKU250220)</p>"
                      "<p>Developed for continuous learning.</p>");
 }

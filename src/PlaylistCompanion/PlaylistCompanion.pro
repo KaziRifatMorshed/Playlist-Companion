@@ -8,11 +8,13 @@ CONFIG += c++23
 VERSION = 1.1.0
 TARGET = PlaylistCompanion
 DISPLAY_NAME = "Playlist Companion"
+PUBLISHER = "Kazi Rifat Morshed CSEKU230220"
 APP_VERSION = "v$${VERSION}"
 
 # Pass to C++ as macros
 DEFINES += APP_VERSION_STR=\"\\\"$$APP_VERSION\\\"\"
 DEFINES += APP_NAME_STR=\"\\\"$$DISPLAY_NAME\\\"\"
+DEFINES += APP_PUBLISHER_STR=\"\\\"$$PUBLISHER\\\"\"
 
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
