@@ -176,6 +176,29 @@ void MainWindow::on_removePlaylist_clicked() {
   }
 }
 
+void MainWindow::on_actionExit_triggered() {
+  close();
+}
+
+void MainWindow::on_actionAbout_triggered() {
+  QMessageBox::about(this, "About Playlist Companion",
+                     QString("<h3>Playlist Companion %1</h3>").arg(APP_VERSION_STR) +
+                     "<p>A simple and efficient tool to manage and track your "
+                     "video learning progress.</p>"
+                     "<p>Features:"
+                     "<ul>"
+                     "<li>Track watched/unwatched videos</li>"
+                     "<li>Calculate total playlist duration</li>"
+                     "<li>Manage multiple playlists</li>"
+                     "<li>Automatic backup and restore</li>"
+                     "</ul></p>"
+                     "<p>GitHub: <a href=\"https://github.com/KaziRifatMorshed/Playlist-Companion\">"
+                     "<span style=\" text-decoration: underline; color:#27bf73;\">"
+                     "https://github.com/KaziRifatMorshed/Playlist-Companion</span></a></p>"
+                     "<p>Acknowledgement: Pritom Das (CSEKU250220)</p>"
+                     "<p>Developed for continuous learning.</p>");
+}
+
 void MainWindow::initGeneralSettings() {
   // 1. Determine the current Operating System
   // The DB schema 'General' table has a CHECK constraint: OS IN ('Windows',

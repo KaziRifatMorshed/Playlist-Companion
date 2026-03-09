@@ -46,6 +46,8 @@ int main(int argc, char *argv[])
 
     qInstallMessageHandler(myMessageOutput);
     QApplication a(argc, argv);
+    a.setApplicationName(APP_NAME_STR);
+    a.setApplicationVersion(APP_VERSION_STR);
     a.setWindowIcon(QIcon(":/logo/logo.ico"));
 
     QTranslator translator;

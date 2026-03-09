@@ -42,6 +42,8 @@ private slots:
     void vdoNotWatched_clicked();
     void watchedThisVdo_clicked();
     void onFrameChanged(const QVideoFrame &frame);
+    void on_actionExit_triggered();
+    void on_actionAbout_triggered();
 
 
 private:
