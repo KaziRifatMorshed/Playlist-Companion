@@ -254,11 +254,17 @@ void MainWindow::updatePlaylistListCombo() {
       combo->setCurrentIndex(0);
   }
 
-  // Manually trigger UI refresh because signals were blocked
-  on_playlistList_currentIndexChanged(combo->currentIndex());
-
   // Unblock signals
   combo->blockSignals(false);
+
+  // If the playlist ID is still the same, we only need to update the labels/stats.
+  // If it changed, the combo box signal (if not blocked) or our manual call should handle it.
+  int newId = combo->currentData().toInt();
+  if (newId == currentId && newId > 0) {
+      updatePlaylistInfoLabels(newId);
+  } else {
+      on_playlistList_currentIndexChanged(combo->currentIndex());
+  }
 }
 
 void MainWindow::populateVideoTable(int playlistId) {
@@ -409,36 +415,7 @@ void MainWindow::on_playlistList_currentIndexChanged(int index) {
     updateVideoGroupBox(currentPlayingVideoId);
     lastWatchedPlId = playlistId; // Update the global tracker
 
-    // Find the playlist in our list
-    Playlist currentPlaylist;
-    for (const auto &pl : listOfPlaylists) {
-      if (pl.playlistId == playlistId) {
-        currentPlaylist = pl;
-        break;
-      }
-    }
-
-    // Now update the UI elements
-    ui->playlistCreationDate->setText(currentPlaylist.creationDateTime);
-    ui->lastWatched->setText(currentPlaylist.lastWatchedDateTime);
-    
-    int remainingHours = sumRemainingTime(playlistId);
-    ui->totalTime->setText(QString("%1/%2 hours")
-                           .arg(remainingHours)
-                           .arg(currentPlaylist.totalTimeHour));
-
-    // Progress bar and count
-    if (currentPlaylist.totalVideoCount > 0) {
-      int progress = (currentPlaylist.watchedCount * 100) /
-                     currentPlaylist.totalVideoCount;
-      ui->progressBar->setValue(progress);
-    } else {
-      ui->progressBar->setValue(0);
-    }
-    ui->playlistProgressCount->setText(
-        QString("%1/%2")
-            .arg(currentPlaylist.watchedCount)
-            .arg(currentPlaylist.totalVideoCount));
+    updatePlaylistInfoLabels(playlistId);
 
     // Update 'General' table in DB so app remembers this selection next time
     QString q = QString("UPDATE General SET lastWatchedPlId = %1 WHERE id = 1")
@@ -455,6 +432,55 @@ void MainWindow::on_playlistList_currentIndexChanged(int index) {
     ui->totalTime->setText("");
     ui->progressBar->setValue(0);
     ui->playlistProgressCount->setText("0/0");
+  }
+}
+
+void MainWindow::updatePlaylistInfoLabels(int playlistId) {
+  if (playlistId <= 0) return;
+
+  // Find the playlist in our list or re-fetch from DB for most accurate counts
+  QString q = QString("SELECT * FROM Playlist WHERE playlistId = %1").arg(playlistId);
+  QSqlQuery query = dbInstance->execQuery(q);
+  
+  if (query.next()) {
+    Playlist pl;
+    pl.playlistId = query.value("playlistId").toInt();
+    pl.creationDateTime = query.value("creationDateTime").toString();
+    pl.lastWatchedDateTime = query.value("lastWatchedDateTime").toString();
+    pl.watchedCount = query.value("watchedCount").toInt();
+    pl.totalVideoCount = query.value("totalVideoCount").toInt();
+    pl.totalTimeHour = query.value("totalTimeHour").toInt();
+
+    // Now update the UI elements
+    ui->playlistCreationDate->setText(pl.creationDateTime);
+    ui->lastWatched->setText(pl.lastWatchedDateTime);
+    
+    int remainingHours = sumRemainingTime(playlistId);
+    ui->totalTime->setText(QString("%1/%2 hours")
+                           .arg(remainingHours)
+                           .arg(pl.totalTimeHour));
+
+    // Progress bar and count
+    if (pl.totalVideoCount > 0) {
+      int progress = (pl.watchedCount * 100) / pl.totalVideoCount;
+      ui->progressBar->setValue(progress);
+    } else {
+      ui->progressBar->setValue(0);
+    }
+    ui->playlistProgressCount->setText(
+        QString("%1/%2")
+            .arg(pl.watchedCount)
+            .arg(pl.totalVideoCount));
+            
+    // Update memory list so it stays in sync
+    for (int i = 0; i < listOfPlaylists.size(); ++i) {
+      if (listOfPlaylists[i].playlistId == playlistId) {
+        listOfPlaylists[i].watchedCount = pl.watchedCount;
+        listOfPlaylists[i].lastWatchedDateTime = pl.lastWatchedDateTime;
+        listOfPlaylists[i].status = query.value("status").toString();
+        break;
+      }
+    }
   }
 }
 
@@ -504,8 +530,28 @@ void MainWindow::watchedThisVdo(int videoId) {
     // Update status
     updatePlaylistStatus(currentPlaylistId);
 
-    updatePlaylistListCombo(); // Refresh playlist combo to update counts
+    updatePlaylistInfoLabels(currentPlaylistId);
   }
+
+  // Update memory state of the video
+  for (int i = 0; i < currentVideoList.size(); ++i) {
+    if (currentVideoList[i].videoID == videoId) {
+      currentVideoList[i].isWatched = 1;
+      break;
+    }
+  }
+
+  // Update the checkbox in the table if it exists
+  isPopulatingTable = true;
+  for (int row = 0; row < ui->allVideosTableWidget->rowCount(); ++row) {
+    QTableWidgetItem *item = ui->allVideosTableWidget->item(row, 0);
+    if (item && item->data(Qt::UserRole).toInt() == videoId) {
+      item->setCheckState(Qt::Checked);
+      break;
+    }
+  }
+  isPopulatingTable = false;
+
   // --- Advance to Next Video ---
   showNextVideo(videoId);
 }
@@ -544,8 +590,27 @@ void MainWindow::vdoNotWatched(int videoId) {
     // Update status
     updatePlaylistStatus(currentPlaylistId);
 
-    updatePlaylistListCombo(); // Refresh playlist combo to update counts
+    updatePlaylistInfoLabels(currentPlaylistId);
   }
+
+  // Update memory state of the video
+  for (int i = 0; i < currentVideoList.size(); ++i) {
+    if (currentVideoList[i].videoID == videoId) {
+      currentVideoList[i].isWatched = 0;
+      break;
+    }
+  }
+
+  // Update the checkbox in the table if it exists
+  isPopulatingTable = true;
+  for (int row = 0; row < ui->allVideosTableWidget->rowCount(); ++row) {
+    QTableWidgetItem *item = ui->allVideosTableWidget->item(row, 0);
+    if (item && item->data(Qt::UserRole).toInt() == videoId) {
+      item->setCheckState(Qt::Unchecked);
+      break;
+    }
+  }
+  isPopulatingTable = false;
 }
 
 void MainWindow::playThisVdo(int videoId) {
@@ -810,7 +875,15 @@ void MainWindow::on_allVideosTableWidget_cellChanged(int row, int column) {
     updatePlaylistStatus(currentPlaylistId);
 
     // 3. Refresh UI (Playlist counts, progress bar, etc.)
-    updatePlaylistListCombo(); // This updates the combo box and global variables
+    updatePlaylistInfoLabels(currentPlaylistId);
+  }
+
+  // 4. Update memory state of the video
+  for (int i = 0; i < currentVideoList.size(); ++i) {
+    if (currentVideoList[i].videoID == videoId) {
+      currentVideoList[i].isWatched = isChecked ? 1 : 0;
+      break;
+    }
   }
 }
 
