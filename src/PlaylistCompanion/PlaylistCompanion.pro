@@ -5,13 +5,13 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 CONFIG += c++23
 
 # Define version and target metadata
-VERSION = 1.1.4
+VERSION = 1.1.5
+APP_VERSION = v$${VERSION}-beta
 TARGET = PlaylistCompanion
 DISPLAY_NAME = "Playlist Companion"
-PUBLISHER = "Kazi Rifat Morshed"
+PUBLISHER = "Kazi Rifat Morshed CSEKU230220"
 DESCRIPTION = "Local Video Playlist Tracker and Productivity Tool"
 CONTACT_EMAIL = "rifat230220@cseku.ac.bd"
-APP_VERSION = "v1.1.4-beta"
 
 # Get Git Hash (if in a git repo)
 GIT_HASH = $$system(git rev-parse --short HEAD)
