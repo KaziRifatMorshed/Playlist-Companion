@@ -1,0 +1,10 @@
+Installation Complete!
+
+Thank you for choosing Playlist Companion. Your workspace is now ready to help you track your learning journey and stay organized.
+
+We hope this tool helps you achieve your productivity goals!
+
+Website: https://kazirifatmorshed.github.io/projects/PlaylistCompanion.html
+
+Publisher: Kazi Rifat Morshed
+Support: rifat230220@cseku.ac.bd

@@ -3,7 +3,7 @@
 ; Non-commercial use only
 
 #define MyAppName "PlaylistCompanion"
-#define MyAppVersion "1.1.7"
+#define MyAppVersion "1.1.8"
 #define MyAppPublisher "Kazi Rifat Morshed CSEKU230220"
 #define MyAppURL "https://kazirifatmorshed.github.io/projects/PlaylistCompanion.html"
 #define MyAppExeName "PlaylistCompanion.exe"
@@ -14,7 +14,7 @@
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
-AppId={{980502A4-4EC8-421B-B9E2-D37D166076FE}
+AppId={{69D3DE78-D526-4F8A-AEC6-BDAEF084C41D}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 ;AppVerName={#MyAppName} {#MyAppVersion}
@@ -35,12 +35,15 @@ ArchitecturesInstallIn64BitMode=x64compatible
 ChangesAssociations=yes
 DisableProgramGroupPage=yes
 LicenseFile=C:\Users\n00bCod3r-tiny10\Documents\GitHub\Playlist-Companion\LICENSE
+InfoBeforeFile=C:\Users\n00bCod3r-tiny10\Documents\GitHub\Playlist-Companion\script\welcome.txt
+InfoAfterFile=C:\Users\n00bCod3r-tiny10\Documents\GitHub\Playlist-Companion\script\thanks.txt
 ; Uncomment the following line to run in non administrative install mode (install for current user only).
 ;PrivilegesRequired=lowest
-OutputBaseFilename=PlaylistCompanionSetup-{#MyAppVersion}
+OutputDir=C:\Users\n00bCod3r-tiny10\Documents\GitHub\Playlist-Companion\build
+OutputBaseFilename=PlaylistCompanion
 SetupIconFile=C:\Users\n00bCod3r-tiny10\Documents\GitHub\Playlist-Companion\logo\logo.ico
 SolidCompression=yes
-WizardStyle=modern windows11
+WizardStyle=modern dynamic windows11
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -49,8 +52,8 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "C:\Users\n00bCod3r-tiny10\Documents\GitHub\Playlist-Companion\src\PlaylistCompanion\build\PlaylistCompanion-v1.1.7\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\n00bCod3r-tiny10\Documents\GitHub\Playlist-Companion\src\PlaylistCompanion\build\PlaylistCompanion-v1.1.7\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "C:\Users\n00bCod3r-tiny10\Documents\GitHub\Playlist-Companion\src\PlaylistCompanion\build\PlaylistCompanion-v1.1.8\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Users\n00bCod3r-tiny10\Documents\GitHub\Playlist-Companion\src\PlaylistCompanion\build\PlaylistCompanion-v1.1.8\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Registry]

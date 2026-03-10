@@ -1,0 +1,5 @@
+Welcome to the Playlist Companion Setup Wizard
+
+This wizard will guide you through the installation of Playlist Companion, your personal tool for tracking video learning progress and managing local playlists efficiently.
+
+Click Next to proceed with the installation.
