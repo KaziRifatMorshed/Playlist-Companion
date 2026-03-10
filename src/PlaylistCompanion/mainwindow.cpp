@@ -183,7 +183,7 @@ void MainWindow::on_actionExit_triggered() {
 void MainWindow::on_actionAbout_triggered() {
   QMessageBox::about(this, "About Playlist Companion",
                      QString("<h3>Playlist Companion %1</h3>").arg(APP_VERSION_STR) +
-                     "<p><b>" APP_DESC_STR "</b></p>"
+                     QString("<p><b>%1</b></p>").arg(APP_DESC_STR) +
                      "<p>A simple and efficient tool to manage and track your "
                      "video learning progress.</p>"
                      "<p>Features:"
@@ -196,11 +196,10 @@ void MainWindow::on_actionAbout_triggered() {
                      "<p>GitHub: <a href=\"https://github.com/KaziRifatMorshed/Playlist-Companion\">"
                      "<span style=\" text-decoration: underline; color:#27bf73;\">"
                      "https://github.com/KaziRifatMorshed/Playlist-Companion</span></a></p>"
-                     "<p>Publisher: " APP_PUBLISHER_STR "<br>"
-                     "Contact: <a href=\"mailto:" APP_CONTACT_STR "\">" APP_CONTACT_STR "</a></p>"
+                     QString("<p>Publisher: %1<br>").arg(APP_PUBLISHER_STR) +
+                     QString("Contact: <a href=\"mailto:%1\">%1</a></p>").arg(APP_CONTACT_STR) +
                      "<p>Acknowledgement: Pritom Das (CSEKU250220)</p>"
-                     "<p><small>Build: " GIT_HASH_STR "<br>"
-                     "Build Date: " + QString(BUILD_DATE_TIME).replace("_", " ") + "</small></p>"
+                     QString("<p><small>Build: %1<br>Build Date: %2</small></p>").arg(GIT_HASH_STR, BUILD_DATE_TIME) +
                      "<p>Developed for continuous learning.</p>");
 }
 

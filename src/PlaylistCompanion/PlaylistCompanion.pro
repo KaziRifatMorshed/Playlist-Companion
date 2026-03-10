@@ -5,31 +5,37 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 CONFIG += c++23
 
 # Define version and target metadata
-VERSION = 1.1.4-beta
+VERSION = 1.1.4
 TARGET = PlaylistCompanion
 DISPLAY_NAME = "Playlist Companion"
-PUBLISHER = "Kazi Rifat Morshed CSEKU230220"
-DESCRIPTION = "Local Video Playlist Progress Tracker | Productivity Tool"
+PUBLISHER = "Kazi Rifat Morshed"
+DESCRIPTION = "Local Video Playlist Tracker and Productivity Tool"
 CONTACT_EMAIL = "rifat230220@cseku.ac.bd"
-APP_VERSION = "v$${VERSION}"
+APP_VERSION = "v1.1.4-beta"
 
 # Get Git Hash (if in a git repo)
 GIT_HASH = $$system(git rev-parse --short HEAD)
 isEmpty(GIT_HASH): GIT_HASH = "unknown"
 
-# Get Build Date & Time
-win32: BUILD_DATE = $$system(echo %date%_%time%)
-else: unix: BUILD_DATE = $$system(date +"%Y-%m-%d_%H:%M:%S")
-BUILD_DATE = $$replace(BUILD_DATE, " ", "_")
+# Get Build Date & Time (Avoid special characters for now)
+win32 {
+    BUILD_DATE_VAL = $$system(echo %date%_%time%)
+    # Basic cleanup
+    BUILD_DATE_VAL = $$replace(BUILD_DATE_VAL, "/", "-")
+    BUILD_DATE_VAL = $$replace(BUILD_DATE_VAL, ":", "-")
+    BUILD_DATE_VAL = $$replace(BUILD_DATE_VAL, " ", "_")
+} else {
+    BUILD_DATE_VAL = $$system(date +"%Y-%m-%d_%H:%M:%S")
+}
 
 # Pass to C++ as macros
-DEFINES += APP_VERSION_STR=\"\\\"$$APP_VERSION\\\"\"
-DEFINES += APP_NAME_STR=\"\\\"$$DISPLAY_NAME\\\"\"
-DEFINES += APP_PUBLISHER_STR=\"\\\"$$PUBLISHER\\\"\"
-DEFINES += APP_DESC_STR=\"\\\"$$DESCRIPTION\\\"\"
-DEFINES += APP_CONTACT_STR=\"\\\"$$CONTACT_EMAIL\\\"\"
-DEFINES += GIT_HASH_STR=\"\\\"$$GIT_HASH\\\"\"
-DEFINES += BUILD_DATE_TIME=\"\\\"$$BUILD_DATE\\\"\"
+DEFINES += APP_VERSION_STR=\"\\\"$${APP_VERSION}\\\"\"
+DEFINES += APP_NAME_STR=\"\\\"$${DISPLAY_NAME}\\\"\"
+DEFINES += APP_PUBLISHER_STR=\"\\\"$${PUBLISHER}\\\"\"
+DEFINES += APP_DESC_STR=\"\\\"$${DESCRIPTION}\\\"\"
+DEFINES += APP_CONTACT_STR=\"\\\"$${CONTACT_EMAIL}\\\"\"
+DEFINES += GIT_HASH_STR=\"\\\"$${GIT_HASH}\\\"\"
+DEFINES += BUILD_DATE_TIME=\"\\\"$${BUILD_DATE_VAL}\\\"\"
 
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
