@@ -5,6 +5,9 @@
 #include <include/db_sqlite.h>
 #include <QVector>
 
+#define stdebug qDebug() << "[settingsWindow] "
+#define stcritical qCritical() << "[settingsWindow][CRITICAL] "
+
 namespace Ui {
 class Settings;
 }

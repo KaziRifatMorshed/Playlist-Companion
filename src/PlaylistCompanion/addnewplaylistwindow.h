@@ -1,14 +1,18 @@
 #ifndef ADDNEWPLAYLISTWINDOW_H
 #define ADDNEWPLAYLISTWINDOW_H
 
+#include <QMap>
 #include <QWidget>
 #include <include/db_sqlite.h>
+
+#define pldebug qDebug() << "[playlistWindow] "
+#define plcritical qCritical() << "[playlistWindow][CRITICAL] "
+#define plwarn qWarning() << "[playlistWindow][WARNING] "
 
 namespace Ui {
 class AddNewPlaylistWindow;
 }
 
-#include <QMap>
 
 struct VideoCollection {
     QVector<QString> fileList; // Contains full absolute path + filename
