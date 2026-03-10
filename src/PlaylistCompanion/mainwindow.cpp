@@ -249,9 +249,7 @@ void MainWindow::initGeneralSettings() {
     lastWatchedPlId = -1;
     lastWatchedVdoId = -1;
 
-    qDebug()
-        << "[MainWindow] General info was empty. Initialized defaults for OS:"
-        << currentOS;
+    mwdebug << "[MainWindow] General info was empty. Initialized defaults for OS:" << currentOS;
     MainWindow::on_pushButton_3_clicked();
   }
 }
@@ -726,10 +724,10 @@ void MainWindow::playThisVdo(int videoId) {
       process->start(program, arguments);
       if (!process->waitForStarted()) {    QMessageBox::critical(this, "Player Launch Error",
                           "Could not start media player: " + program);
-    qDebug() << "Failed to start media player:" << process->errorString();
+          mwdebug << "Failed to start media player:" << process->errorString();
   } else {
-    qDebug() << "Playing video:" << targetVideo.videoPath;
-    qDebug() << "With player:" << program;
+      mwdebug << "Playing video:" << targetVideo.videoPath;
+      mwdebug << "With player:" << program;
   }
 }
 
@@ -1135,7 +1133,7 @@ void MainWindow::saveCurrentVideoNote() {
         q.bindValue(":noteText", noteText);
         q.bindValue(":videoId", currentPlayingVideoId);
         if (!q.exec()) {
-            qCritical() << "Failed to update note:" << q.lastError().text();
+            mwcritical << "Failed to update note:" << q.lastError().text();
         }
     } else {
         // Insert
@@ -1145,7 +1143,7 @@ void MainWindow::saveCurrentVideoNote() {
         q.bindValue(":videoId", currentPlayingVideoId);
         q.bindValue(":noteText", noteText);
         if (!q.exec()) {
-            qCritical() << "Failed to insert note:" << q.lastError().text();
+            mwcritical << "Failed to insert note:" << q.lastError().text();
         }
     }
 }

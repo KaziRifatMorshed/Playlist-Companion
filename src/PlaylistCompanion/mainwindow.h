@@ -12,6 +12,9 @@
 #include <QVideoFrame>
 #include <QImage>
 
+#define mwdebug qDebug() << "[mainWindow] "
+#define mwcritical qCritical() << "[mainWindow][CRITICAL] "
+
 QT_BEGIN_NAMESPACE
 namespace Ui {
 class MainWindow;
