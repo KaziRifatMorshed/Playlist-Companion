@@ -2,6 +2,42 @@
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
 
+SUMMARY IN EASY ENGLISH:
+
+    What You CAN Do:
+
+    Commercial Use: Use the code to build a product you sell.
+
+    Modify: Change the code however you like.
+
+    Distribute: Share the original code or your modified version.
+
+    Sublicense: Use the code as part of a larger project with a different license.
+
+    Patent Grant: The license explicitly gives you the right to use any patents the original author holds that are necessary to run the software.
+
+
+    What You CAN'T Do:
+
+    Hold the Author Liable: The code is provided "as is." If it breaks your server or loses your data, you can't sue the creator (No Warranty).
+
+    Use Their Trademark: You can't use the project’s name or logos in a way that suggests they endorse your work (e.g., you can't call your modified version "Official Linux-Pro").
+
+    Sue for Patent Infringement: If you sue the project over patent claims, your right to use the software under this license is immediately revoked (this is the "Patent Peace" clause).
+
+
+    What You MUST Do (The Conditions):
+
+    Include the License: You must include a copy of the Apache License in your project.
+
+    Keep Copyright Notices: Don't delete the "Copyright 2026 Kazi Rifat Morshed rifat230220@cseku.ac.bd" lines from the source code.
+
+    State Changes: If you modify files, it's good practice (and technically required) to include a notice in the file stating that you changed it.
+
+    The NOTICE file: If the original project has a file called NOTICE, you must include a copy of that file in your distribution.
+
+
+
    TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
 
    1. Definitions.
@@ -186,7 +222,7 @@
       same "printed page" as the copyright notice for easier
       identification within third-party archives.
 
-   Copyright [yyyy] [name of copyright owner]
+   Copyright 2026 Kazi Rifat Morshed rifat230220@cseku.ac.bd
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
