@@ -1013,7 +1013,7 @@ void MainWindow::updateVideoGroupBox(int videoId) {
             generateThumbnail(videoPath);
             loadCurrentVideoNote(videoId);
         } else {
-            ui->currentVideoTitle->setText("No video selected or Video not found");
+            ui->currentVideoTitle->setText("No video selected");
             ui->currentVideoNumberInPlaylist->setText("");
             ui->currentVideoNote_textEdit->clear();
         }

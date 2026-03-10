@@ -9,6 +9,7 @@
 #include <QFileDialog>
 #include <QFileInfoList>
 #include <QMessageBox>
+#include <QProcess>
 #include <QString>
 #include <QTableWidget>
 #include <QTableWidgetItem>
@@ -332,33 +333,48 @@ void Settings::updateBackupLabels() {
 }
 
 void Settings::on_restoreBackup_clicked() {
-
   // get which file to restore
   QString filter = "SQLite (*.sqlite)";
   QString backupFileName = QFileDialog::getOpenFileName(
       this, "Select a SQLite file that stored previous backup",
       SQliteDB::getDbDirPath(), filter);
+
+  if (backupFileName.isEmpty())
+    return;
+
   // check whether the file exists
   QFile instructionFile(backupFileName);
   if (!instructionFile.open(QFile::ReadOnly)) {
     QMessageBox::warning(this, "File failed to select !!!",
                          "File failed to select!");
+    return;
   }
+  instructionFile.close();
+
   // perform backup & replacement
   dbInstance->restoreDBfile(backupFileName);
 
   updateBackupLabels();
 
-  // NOTE: upadate UI with new data ; it can be a better approach to close the
-  // app and reopen it again
+  QMessageBox::StandardButton reply;
+  reply = QMessageBox::question(
+      this, "Backup Restoration Successful",
+      "The database has been restored successfully. For safety, a backup of "
+      "your previous database was created.\n\n"
+      "The application needs to restart to load the restored data correctly. "
+      "Do you want to restart now?",
+      QMessageBox::Yes | QMessageBox::No);
 
-  QMessageBox::information(
-      this, "Backup Restoration",
-      "For safety measurements, we have made a backup of the current database. "
-      "Now, the data will be replaced with the data from the backup/sqlite "
-      "file you have just selected.\n\nIf you want to get back your data, you "
-      "can restore it again. SQLite backup filename contains timestamp "
-      "reffering when backup was performed.");
+  if (reply == QMessageBox::Yes) {
+    qApp->quit();
+    QProcess::startDetached(qApp->applicationFilePath(), qApp->arguments());
+  } else {
+    emit settingsChanged();
+    QMessageBox::information(
+        this, "Restart Postponed",
+        "Some changes might not be visible until you manually restart the "
+        "application.");
+  }
 }
 
 void Settings::on_createBackup_clicked() {
