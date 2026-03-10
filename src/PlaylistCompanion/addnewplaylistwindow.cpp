@@ -69,7 +69,7 @@ AddNewPlaylistWindow::AddNewPlaylistWindow(QWidget *parent, int plListId,
     ui->playlistTitle->setText(plPath.dirName());
 
     ui->playlistCreationDate->setText(
-        QDateTime::currentDateTime().toString("yyyy-MM-dd") + " (yyyy-MM-dd)");
+        QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm AP"));
 
     startDurationCalculation();
 
@@ -86,6 +86,16 @@ AddNewPlaylistWindow::AddNewPlaylistWindow(QWidget *parent, int plListId,
     QSqlQuery playlistInfo =
         dbInstance->execQuery("SELECT * FROM Playlist WHERE playlistId = " +
                               QString::number(playlistID) + ";");
+    
+    auto formatDT = [](const QString &dtStr) {
+        if (dtStr.isEmpty()) return QString("N/A");
+        QDateTime dt = QDateTime::fromString(dtStr, Qt::ISODate);
+        if (!dt.isValid()) {
+            dt = QDateTime::fromString(dtStr, "yyyy-MM-dd HH:mm:ss");
+        }
+        return dt.isValid() ? dt.toString("yyyy-MM-dd hh:mm AP") : dtStr;
+    };
+
     while (playlistInfo.next()) {
       ui->folderPath->setText(playlistInfo.value("playlistPath").toString());
       ui->playlistTitle->setText(
@@ -98,7 +108,7 @@ AddNewPlaylistWindow::AddNewPlaylistWindow(QWidget *parent, int plListId,
       ui->totalHourWatched->setText(
           playlistInfo.value("totalTimeHour").toString());
       ui->playlistCreationDate->setText(
-          playlistInfo.value("creationDateTime").toString());
+          formatDT(playlistInfo.value("creationDateTime").toString()));
     }
   }
 }

@@ -249,7 +249,7 @@ void MainWindow::initGeneralSettings() {
     lastWatchedPlId = -1;
     lastWatchedVdoId = -1;
 
-    mwdebug << "[MainWindow] General info was empty. Initialized defaults for OS:" << currentOS;
+    mwdebug << "General info was empty. Initialized defaults for OS:" << currentOS;
     MainWindow::on_pushButton_3_clicked();
   }
 }
@@ -509,8 +509,17 @@ void MainWindow::updatePlaylistInfoLabels(int playlistId) {
     pl.totalTimeHour = query.value("totalTimeHour").toInt();
 
     // Now update the UI elements
-    ui->playlistCreationDate->setText(pl.creationDateTime);
-    ui->lastWatched->setText(pl.lastWatchedDateTime);
+    auto formatDT = [](const QString &dtStr) {
+        if (dtStr.isEmpty()) return QString("N/A");
+        QDateTime dt = QDateTime::fromString(dtStr, Qt::ISODate);
+        if (!dt.isValid()) {
+            dt = QDateTime::fromString(dtStr, "yyyy-MM-dd HH:mm:ss");
+        }
+        return dt.isValid() ? dt.toString("yyyy-MM-dd hh:mm AP") : dtStr;
+    };
+
+    ui->playlistCreationDate->setText(formatDT(pl.creationDateTime));
+    ui->lastWatched->setText(formatDT(pl.lastWatchedDateTime));
     
     int watchedHours = sumWatchedTime(playlistId);
     ui->totalHourWatched->setText(QString("%1/%2 hours")
