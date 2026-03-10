@@ -65,7 +65,7 @@ bool SQliteDB::openDB(const QString &dbPath) {
     }
 
     if (!db.open()) {
-        qCritical() << "[sqLiteDB] Failed to open DB: " << db.lastError().text();
+        dbcritical << "Failed to open DB: " << db.lastError().text();
         return false;
     }
 
@@ -73,7 +73,7 @@ bool SQliteDB::openDB(const QString &dbPath) {
     {
         QSqlQuery pragma(db);
         if (!pragma.exec("PRAGMA foreign_keys = ON;")) {
-            qWarning() << "[sqLiteDB] Failed to enable foreign keys:" << pragma.lastError().text();
+            dbdebug << "Failed to enable foreign keys:" << pragma.lastError().text();
         }
     }
 
@@ -88,8 +88,8 @@ bool SQliteDB::openDB(const QString &dbPath) {
 
             QSqlQuery query(db);
             if (!query.exec(statement)) {
-                qCritical() << "[sqLiteDB] Schema initialization failed for statement:" << statement
-                            << "; Error:" << query.lastError().text();
+                dbcritical << "Schema initialization failed for statement:" << statement
+                           << "; Error:" << query.lastError().text();
             }
         }
         dbdebug << "Schema initialized successfully.";
@@ -103,8 +103,7 @@ QSqlQuery SQliteDB::execQuery(const QString &queryStr) {
     QMutexLocker locker(&queryMutex);
     QSqlQuery query(db);
     if (!query.exec(queryStr)) {
-        qCritical() << "[sqLiteDB] Query failed:" << queryStr
-            << "; Error:" << query.lastError().text();
+        dbcritical << "Query failed:" << queryStr << "; Error:" << query.lastError().text();
     }
     return query;
 }
