@@ -195,10 +195,10 @@ void MainWindow::on_actionAbout_triggered() {
                      "</ul></p>"
                      "<p>GitHub: <a href=\"https://github.com/KaziRifatMorshed/Playlist-Companion\">"
                      "<span style=\" text-decoration: underline; color:#27bf73;\">"
-                     "https://github.com/KaziRifatMorshed/Playlist-Companion</span></a></p>"
+                     "https://github.com/KaziRifatMorshed/Playlist-Companion</span></a></p>" +
                      QString("<p>Publisher: %1<br>").arg(APP_PUBLISHER_STR) +
                      QString("Contact: <a href=\"mailto:%1\">%1</a></p>").arg(APP_CONTACT_STR) +
-                     "<p>Acknowledgement: Pritom Das (CSEKU250220)</p>"
+                     "<p>Acknowledgement: Pritom Das (CSEKU250220)</p>" +
                      QString("<p><small>Build: %1<br>Build Date: %2</small></p>").arg(GIT_HASH_STR, BUILD_DATE_TIME) +
                      "<p>Developed for continuous learning.</p>");
 }
