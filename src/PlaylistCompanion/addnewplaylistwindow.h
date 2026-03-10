@@ -2,6 +2,7 @@
 #define ADDNEWPLAYLISTWINDOW_H
 
 #include <QMap>
+#include <QMediaPlayer>
 #include <QWidget>
 #include <include/db_sqlite.h>
 
@@ -19,9 +20,6 @@ struct VideoCollection {
     QMap<QString, int> fileDurations; // Maps path to duration in seconds
     int count;
 };
-
-
-#include <QMediaPlayer>
 
 class AddNewPlaylistWindow : public QWidget
 {
