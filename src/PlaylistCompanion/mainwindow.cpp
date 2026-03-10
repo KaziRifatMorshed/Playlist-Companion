@@ -199,7 +199,8 @@ void MainWindow::on_actionAbout_triggered() {
                      "<p>Publisher: " APP_PUBLISHER_STR "<br>"
                      "Contact: <a href=\"mailto:" APP_CONTACT_STR "\">" APP_CONTACT_STR "</a></p>"
                      "<p>Acknowledgement: Pritom Das (CSEKU250220)</p>"
-                     "<p><small>Build: " GIT_HASH_STR "</small></p>"
+                     "<p><small>Build: " GIT_HASH_STR "<br>"
+                     "Build Date: " + QString(BUILD_DATE_TIME).replace("_", " ") + "</small></p>"
                      "<p>Developed for continuous learning.</p>");
 }
 

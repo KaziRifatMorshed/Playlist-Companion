@@ -5,7 +5,7 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 CONFIG += c++23
 
 # Define version and target metadata
-VERSION = 1.1.3
+VERSION = 1.1.4-beta
 TARGET = PlaylistCompanion
 DISPLAY_NAME = "Playlist Companion"
 PUBLISHER = "Kazi Rifat Morshed CSEKU230220"
@@ -17,6 +17,11 @@ APP_VERSION = "v$${VERSION}"
 GIT_HASH = $$system(git rev-parse --short HEAD)
 isEmpty(GIT_HASH): GIT_HASH = "unknown"
 
+# Get Build Date & Time
+win32: BUILD_DATE = $$system(echo %date%_%time%)
+else: unix: BUILD_DATE = $$system(date +"%Y-%m-%d_%H:%M:%S")
+BUILD_DATE = $$replace(BUILD_DATE, " ", "_")
+
 # Pass to C++ as macros
 DEFINES += APP_VERSION_STR=\"\\\"$$APP_VERSION\\\"\"
 DEFINES += APP_NAME_STR=\"\\\"$$DISPLAY_NAME\\\"\"
@@ -24,6 +29,7 @@ DEFINES += APP_PUBLISHER_STR=\"\\\"$$PUBLISHER\\\"\"
 DEFINES += APP_DESC_STR=\"\\\"$$DESCRIPTION\\\"\"
 DEFINES += APP_CONTACT_STR=\"\\\"$$CONTACT_EMAIL\\\"\"
 DEFINES += GIT_HASH_STR=\"\\\"$$GIT_HASH\\\"\"
+DEFINES += BUILD_DATE_TIME=\"\\\"$$BUILD_DATE\\\"\"
 
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
