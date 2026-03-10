@@ -59,6 +59,10 @@ bool SQliteDB::openDB(const QString &dbPath) {
     const QString connectionName = "db_connection";
     if (QSqlDatabase::contains(connectionName)) {
         db = QSqlDatabase::database(connectionName);
+        if (db.databaseName() != dbPath) {
+            db.close();
+            db.setDatabaseName(dbPath);
+        }
     } else {
         db = QSqlDatabase::addDatabase("QSQLITE", connectionName);
         db.setDatabaseName(dbPath);
@@ -133,9 +137,19 @@ QString SQliteDB::backupDBfile() {
 
 void SQliteDB::restoreDBfile(QString targetFilePath) {
     backupDBfile();
-    if (copyFile(targetFilePath, dbInstance->dbPath)) {
-        dbdebug << "Restored successfully:" << dbInstance->dbPath;
+    
+    // Close and clear the database handle to release file locks on Windows
+    QString connectionName = db.connectionName();
+    db.close();
+    db = QSqlDatabase(); 
+    QSqlDatabase::removeDatabase(connectionName);
+    
+    if (copyFile(targetFilePath, dbPath)) {
+        dbdebug << "Restored successfully:" << dbPath;
     }
+    
+    // Re-open the database
+    openDB(dbPath);
 }
 
 SQliteDB::SQliteDB() {}
