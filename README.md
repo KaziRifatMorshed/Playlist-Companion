@@ -9,8 +9,9 @@
 **A desktop app to track your progress through local video playlists and tutorials**
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/noobcod3r-rtx/Playlist-Companion)
-[![License](https://img.shields.io/badge/license-MIT-blue)](https://github.com/noobcod3r-rtx/Playlist-Companion/blob/main/LICENSE)
-[![Version](https://img.shields.io/badge/version-0.1.0-orange)](https://github.com/noobcod3r-rtx/Playlist-Companion)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue)](https://github.com/noobcod3r-rtx/Playlist-Companion/blob/main/LICENSE)
+[![Version](https://img.shields.io/badge/version-1.1.8-orange)](https://github.com/noobcod3r-rtx/Playlist-Companion)
+[![Project Website](https://img.shields.io/badge/website-visit-brightgreen)](https://kazirifatmorshed.github.io/projects/PlaylistCompanion.html)
 
 </div>
 
@@ -42,25 +43,40 @@ Playlist Companion is a GUI desktop application built with C++ and the Qt6 frame
     *   **Backup & Restore:** Built-in tools to create database backups and restore them whenever needed.
 *   **Cross-Platform:**
     *   Native support for Windows, macOS, and Linux thanks to the Qt6 framework.
+*   **Multi-language Support:**
+    *   Currently supports English.
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
-*   C++ Compiler (with C++17 support)
-*   CMake (version 3.10 or higher)
-*   Qt6
+*   C++ Compiler (with C++23 support)
+*   Qt6 (with `multimedia`, `sql`, and `widgets` modules)
+*   `qmake` (Qt Build Tool)
 
 ### Installation
 
-To build the project, run the following commands from the root directory:
+To build the project from source:
 
-```bash
-mkdir -p build
-cd build
-cmake ..
-make
-```
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/noobcod3r-rtx/Playlist-Companion.git
+    cd Playlist-Companion
+    ```
+
+2.  **Navigate to the source directory:**
+    ```bash
+    cd src/PlaylistCompanion
+    ```
+
+3.  **Build the project:**
+    ```bash
+    mkdir build
+    cd build
+    qmake ..
+    make
+    ```
+    *Note: On Windows, use `nmake` or `jom` instead of `make`, or open the `.pro` file in Qt Creator.*
 
 ## 🏃‍♀️ Usage
 
@@ -80,14 +96,26 @@ Contributions are welcome! Please feel free to submit a pull request or open an 
 4.  Push to the Branch (`git push origin feature/AmazingFeature`)
 5.  Open a Pull Request
 
+## 💖 Acknowledgments
+
+*   **Pritom Das (CSEKU250220):** I am really grateful for your contribution and support as an active tester and for quickly finding issues.
+
 ## 📜 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
 
 ## 📂 Project Structure
 
-*   `src/`: Contains the C++ source files.
-*   `include/`: Contains the header files.
-*   `build/`: Directory for build outputs. It is ignored by git.
-*   `tests/`: Contains unit tests.
-*   `CMakeLists.txt`: The build script for CMake.
+*   `src/PlaylistCompanion/`: Main source code, UI files, and project configuration (`.pro`).
+    *   `include/`: Header files.
+*   `logo/`: Application logos and assets.
+*   `script/`: Installation and helper scripts.
+*   `tests/`: Unit tests for the application.
+*   `PlaylistCompanion.pro`: The qmake project file.
+
+# Author
+
+- **Name**: Kazi Rifat Morshed
+- **Affiliation**: Computer Science and Engineering Discipline, [Khulna University](https://www.ku.ac.bd)
+- **Email**: rifat230220@cseku.ac.bd
+- **Website**: [https://kazirifatmorshed.github.io](https://kazirifatmorshed.github.io)
