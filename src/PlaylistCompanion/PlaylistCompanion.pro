@@ -5,7 +5,7 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 CONFIG += c++23
 
 # Define version and target metadata
-VERSION = 1.1.6
+VERSION = 1.1.7
 APP_VERSION = v$${VERSION}
 TARGET = PlaylistCompanion
 DISPLAY_NAME = "PlaylistCompanion"

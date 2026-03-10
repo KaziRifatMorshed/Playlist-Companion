@@ -122,7 +122,7 @@ QSqlQuery SQliteDB::execQuery(const QString &queryStr) {
     QMutexLocker locker(&queryMutex);
     QSqlQuery query(db);
     if (!query.exec(queryStr)) {
-        dbcritical << "Query failed:" << queryStr << "; Error:" << query.lastError().text();
+        dbcritical << "Query failed; Error:" << query.lastError().text();
     }
     return query;
 }
