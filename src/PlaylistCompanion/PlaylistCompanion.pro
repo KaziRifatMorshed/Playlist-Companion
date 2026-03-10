@@ -8,8 +8,8 @@ CONFIG += c++23
 VERSION = 1.1.6
 APP_VERSION = v$${VERSION}
 TARGET = PlaylistCompanion
-DISPLAY_NAME = "Playlist Companion"
-PUBLISHER = "Kazi Rifat Morshed CSEKU230220"
+DISPLAY_NAME = "PlaylistCompanion"
+PUBLISHER = "Kazi Rifat Morshed CSEKU230220 Development"
 DESCRIPTION = "Local Video Playlist Tracker and Productivity Tool"
 CONTACT_EMAIL = "rifat230220@cseku.ac.bd"
 

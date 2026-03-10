@@ -10,6 +10,7 @@
 #include <QMutex>
 #include <QMutexLocker>
 #include <QProcess>
+#include <QStandardPaths>
 #include <QString>
 #include <QVariant>
 #include <QtSql/QSqlDatabase>

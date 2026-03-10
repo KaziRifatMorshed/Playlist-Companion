@@ -20,18 +20,33 @@ SQliteDB *SQliteDB::instance() {
         // generate paths
         SQliteDB::appPath = QCoreApplication::applicationFilePath();
         SQliteDB::appDirPath = QCoreApplication::applicationDirPath();
-        SQliteDB::dbDirPath = SQliteDB::appDirPath +
-#ifdef __linux__
-            "/dbPlaylistCompanion/";
-#elif _WIN32
-            "\\dbPlaylistCompanion\\";
+
+        // Use a writable location for the database (e.g., AppData on Windows)
+        QString baseDataPath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
+        if (baseDataPath.isEmpty()) {
+            baseDataPath = SQliteDB::appDirPath;
+        }
+
+        QDir baseDir(baseDataPath);
+        if (!baseDir.exists()) {
+            baseDir.mkpath(".");
+        }
+
+        // Add the subdirectory
+        SQliteDB::dbDirPath = baseDir.absoluteFilePath("dbPlaylistCompanion");
+
+#ifdef _WIN32
+        SQliteDB::dbDirPath += "\\";
+#else
+        SQliteDB::dbDirPath += "/";
 #endif
+
         SQliteDB::dbPath = SQliteDB::dbDirPath + "db_PL.sqlite";
 
         // Create dbDirPath if it doesn't exist
-        QDir dir(SQliteDB::dbDirPath);
-        if (!dir.exists()) {
-            if (!dir.mkpath(".")) {
+        QDir dbDir(SQliteDB::dbDirPath);
+        if (!dbDir.exists()) {
+            if (!dbDir.mkpath(".")) {
                 dbdebug << "Error: Could not create dbDirPath:" << SQliteDB::dbDirPath;
             } else {
                 dbdebug << "dbDirPath created successfully:" << SQliteDB::dbDirPath;
