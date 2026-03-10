@@ -5,11 +5,12 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 CONFIG += c++23
 
 # Define version and target metadata
-VERSION = 1.1.7
+VERSION = 1.1.8
 APP_VERSION = v$${VERSION}
 TARGET = PlaylistCompanion
 DISPLAY_NAME = "PlaylistCompanion"
 PUBLISHER = "Kazi Rifat Morshed CSEKU230220 Development"
+COPYRIGHT = "Copyright (C) 2026 Kazi Rifat Morshed. All rights reserved."
 DESCRIPTION = "Local Video Playlist Tracker and Productivity Tool"
 CONTACT_EMAIL = "rifat230220@cseku.ac.bd"
 
@@ -17,13 +18,9 @@ CONTACT_EMAIL = "rifat230220@cseku.ac.bd"
 GIT_HASH = $$system(git rev-parse --short HEAD)
 isEmpty(GIT_HASH): GIT_HASH = "unknown"
 
-# Get Build Date & Time (Avoid special characters for now)
+# Get Build Date & Time
 win32 {
-    BUILD_DATE_VAL = $$system(echo %date%_%time%)
-    # Basic cleanup
-    BUILD_DATE_VAL = $$replace(BUILD_DATE_VAL, "/", "-")
-    BUILD_DATE_VAL = $$replace(BUILD_DATE_VAL, ":", "-")
-    BUILD_DATE_VAL = $$replace(BUILD_DATE_VAL, " ", "_")
+    BUILD_DATE_VAL = $$system(powershell -NoProfile -Command "Get-Date -Format 'yyyy-MM-dd_HH-mm-ss'")
 } else {
     BUILD_DATE_VAL = $$system(date +"%Y-%m-%d_%H:%M:%S")
 }
@@ -32,6 +29,7 @@ win32 {
 DEFINES += APP_VERSION_STR=\"\\\"$${APP_VERSION}\\\"\"
 DEFINES += APP_NAME_STR=\"\\\"$${DISPLAY_NAME}\\\"\"
 DEFINES += APP_PUBLISHER_STR=\"\\\"$${PUBLISHER}\\\"\"
+DEFINES += APP_COPYRIGHT_STR=\"\\\"$${COPYRIGHT}\\\"\"
 DEFINES += APP_DESC_STR=\"\\\"$${DESCRIPTION}\\\"\"
 DEFINES += APP_CONTACT_STR=\"\\\"$${CONTACT_EMAIL}\\\"\"
 DEFINES += GIT_HASH_STR=\"\\\"$${GIT_HASH}\\\"\"
